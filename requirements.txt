@@ -1,0 +1,23 @@
+# --- UI ---
+streamlit>=1.36.0
+
+# --- LLM local (Ollama) ---
+ollama>=0.3.3
+langchain-community>=0.3.0
+langchain-core>=0.3.0
+
+# --- PDF -> Markdown (offline) ---
+pymupdf4llm>=0.0.17
+pymupdf>=1.24.10
+
+# --- Generación de PPTX ---
+python-pptx>=1.0.2
+
+# --- Exportación de Quiz a PDF ---
+reportlab>=4.2.0
+
+# --- Utilidades ---
+pydantic>=2.8.0
+tenacity>=9.0.0
+typing-extensions>=4.12.0
+httpx>=0.27.0
