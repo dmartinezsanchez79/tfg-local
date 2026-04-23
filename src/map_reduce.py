@@ -1,13 +1,9 @@
 """Pipeline Map-Reduce para consolidar un documento largo.
 
-La salida canónica es una `KnowledgeBase` estructurada (JSON), producida
-por `build_knowledge_base`. Adicionalmente se mantiene la función legacy
-`consolidate_document`, que devuelve el mismo contenido renderizado como
-Markdown y actúa como shim de compatibilidad para el código que todavía
-espera un resumen textual.
-
-El chunker intenta respetar los límites naturales del Markdown (cabeceras,
-párrafos) para no partir una tabla o un concepto por la mitad.
+La salida es una `KnowledgeBase` estructurada (JSON), producida por
+`build_knowledge_base`. El chunker respeta los límites naturales del
+Markdown (cabeceras, párrafos) para no partir una tabla o un concepto por
+la mitad.
 """
 from __future__ import annotations
 
@@ -34,7 +30,6 @@ from .knowledge_base import (
 from .ollama_client import OllamaClient
 from .prompts import (
     MAP_SUMMARY_PROMPT,
-    REDUCE_CONSOLIDATION_PROMPT,
     REDUCE_TO_KB_PROMPT,
     SYSTEM_EXPERT_ES,
 )

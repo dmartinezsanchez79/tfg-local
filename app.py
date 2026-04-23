@@ -308,7 +308,6 @@ def render_generate_section(model: str, num_questions_range: tuple[int, int]) ->
                         client, kb,
                         min_questions=min_q,
                         max_questions=max_q,
-                        source_markdown=processed.markdown,
                     )
                 except (OllamaUnavailableError, OllamaModelNotFoundError, GenerationError) as exc:
                     st.error(f":x: {exc}")
@@ -374,7 +373,6 @@ def render_generate_section(model: str, num_questions_range: tuple[int, int]) ->
                     client,
                     kb,
                     progress_cb=cb,
-                    source_markdown=processed.markdown,
                 )
             except TemplateError as exc:
                 st.error(f":x: Plantilla inválida: {exc}")
