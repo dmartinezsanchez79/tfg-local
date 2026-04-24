@@ -1,0 +1,55 @@
+{
+  "description": "Catálogo de PDFs del benchmark. Edita libremente este fichero para añadir o quitar documentos. Los campos has_tables, has_images y domain son informativos; no cambian el comportamiento del pipeline.",
+  "pdfs": [
+    {
+      "id": "poo",
+      "filename": "ProgOrientadaObjetos.pdf",
+      "title": "Programación Orientada a Objetos",
+      "pages": null,
+      "has_tables": false,
+      "has_images": true,
+      "domain": "programacion",
+      "length_category": "medio"
+    },
+    {
+      "id": "ia",
+      "filename": "InteligenciaArtificial.pdf",
+      "title": "Inteligencia Artificial",
+      "pages": null,
+      "has_tables": true,
+      "has_images": true,
+      "domain": "ia",
+      "length_category": "largo"
+    },
+    {
+      "id": "bbdd",
+      "filename": "BasesDatosDistribuidas.pdf",
+      "title": "Bases de Datos Distribuidas",
+      "pages": null,
+      "has_tables": true,
+      "has_images": false,
+      "domain": "bbdd",
+      "length_category": "corto"
+    },
+    {
+      "id": "bigdata",
+      "filename": "FundamentosBigData.pdf",
+      "title": "Fundamentos de Big Data",
+      "pages": null,
+      "has_tables": true,
+      "has_images": true,
+      "domain": "datos",
+      "length_category": "medio"
+    },
+    {
+      "id": "pln",
+      "filename": "ProcesamientoLenguajeNatural.pdf",
+      "title": "Procesamiento de Lenguaje Natural",
+      "pages": null,
+      "has_tables": false,
+      "has_images": true,
+      "domain": "ia",
+      "length_category": "medio"
+    }
+  ]
+}

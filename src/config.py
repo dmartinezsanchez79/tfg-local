@@ -34,14 +34,11 @@ MAX_INPUT_CHARS: Final[int] = 50_000  # límite duro de entrada
 MAX_INPUT_PAGES: Final[int] = 50
 
 # --- Quiz ---
-# El usuario elige un rango [min, max] (no un número exacto). El sistema
-# genera un "target adaptativo" según los átomos del KB y luego descarta
-# las preguntas que no pasen el filtro de calidad, garantizando que la
-# salida esté dentro del rango. Esto evita rellenar con preguntas débiles
-# cuando el KB no da para más.
-MIN_NUM_QUESTIONS: Final[int] = 5
+# Rango fijo de preguntas: simplifica la interfaz y mantiene consistencia
+# entre ejecuciones y comparativas de modelos.
+MIN_NUM_QUESTIONS: Final[int] = 7
 MAX_NUM_QUESTIONS: Final[int] = 15
-DEFAULT_NUM_QUESTIONS_RANGE: Final[tuple[int, int]] = (5, 12)
+DEFAULT_NUM_QUESTIONS_RANGE: Final[tuple[int, int]] = (7, 15)
 
 # --- PPTX ---
 # Mapping verificado contra `plantilla_universidad.pptx`:

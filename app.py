@@ -209,20 +209,9 @@ def render_sidebar() -> tuple[str, tuple[int, int]]:
                 "Ejecuta `ollama pull <modelo>` si no lo tienes."
             ),
         )
-        min_q, max_q = st.slider(
-            "Rango de preguntas del Quiz",
-            min_value=MIN_NUM_QUESTIONS,
-            max_value=MAX_NUM_QUESTIONS,
-            value=DEFAULT_NUM_QUESTIONS_RANGE,
-            step=1,
-            help=(
-                "El sistema elegirá cuántas preguntas generar dentro de "
-                "este rango según la riqueza del PDF. Solo salen las que "
-                "pasan el filtro de calidad."
-            ),
-        )
+        min_q, max_q = DEFAULT_NUM_QUESTIONS_RANGE
         st.caption(
-            f"El sistema generará entre **{min_q}** y **{max_q}** preguntas."
+            f"Rango fijo de Quiz: **{min_q}–{max_q}** preguntas."
         )
         st.markdown("---")
         st.caption(

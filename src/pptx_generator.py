@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from io import BytesIO
 from pathlib import Path
@@ -124,44 +125,40 @@ def _echoes_title(bullet_norm: str, title_norm: str) -> bool:
     return not tail or tail[:1] in {":", ".", "—", "–", "-", ",", "·"}
 
 
-def _trim_by_words(text: str, max_len: int) -> str:
-    """Recorta por palabras sin `…`, cerrando la frase con punto si hace falta."""
+def _trim_by_words(text: str, max_len: int) -> str | None:
+    """Recorta solo en cierre natural (. ; : ? !); no fabrica cierres."""
     if len(text) <= max_len:
         return text
     cut = text[:max_len]
-    last_space = cut.rfind(" ")
-    if last_space > max_len * 0.5:
-        cut = cut[:last_space]
-    cut = cut.rstrip(",;:·-—(").rstrip()
-    if cut and cut[-1] not in ".!?)":
-        cut += "."
-    return cut
+    close = max(cut.rfind("."), cut.rfind(";"), cut.rfind(":"), cut.rfind("?"), cut.rfind("!"))
+    if close < int(max_len * 0.45):
+        return None
+    out = cut[: close + 1].strip()
+    return out or None
 
 
 _BAD_END_RE = re.compile(
     r"(?i)\b(?:de|del|la|el|los|las|y|o|u|en|con|por|para|un|una|unos|unas|que|como)\.$"
 )
 _CONTENT_TOKEN_RE = re.compile(r"[a-z0-9áéíóúüñ]{3,}", flags=re.IGNORECASE)
+_SENTENCE_END_RE = re.compile(r"[.;:?!]\)?\s*$")
+_STRIP_PUNCT_RE = re.compile(r"[^\w\sáéíóúüñ]+", flags=re.IGNORECASE)
+_BULLET_STOPWORDS = {
+    "de", "del", "la", "el", "los", "las", "un", "una", "unos", "unas", "y", "o", "u",
+    "en", "con", "por", "para", "que", "como", "se", "es", "son", "al", "lo", "su",
+}
 
 
 def _normalize_bullet_ending(text: str) -> str | None:
-    """Intenta evitar bullets truncados al final.
-
-    Si parece truncado, recorta al último punto completo; si no existe, descarta.
-    """
+    """Valida cierre natural y descarta finales sospechosos."""
     t = text.strip()
     if not t:
         return None
-    t = t.rstrip(",;:·-—").strip()
-    if not t:
+    t = t.rstrip(",·-—").strip()
+    if not t or not _SENTENCE_END_RE.search(t):
         return None
-    if t[-1] not in ".!?)":
-        t += "."
     if _BAD_END_RE.search(t):
-        last_dot = t[:-1].rfind(". ")
-        if last_dot == -1:
-            return None
-        t = t[: last_dot + 1].strip()
+        return None
     return t if len(t) >= 25 else None
 
 
@@ -182,7 +179,10 @@ def _balance_bullet_density(bullets: list[str]) -> list[str]:
     max_chars = 170 if len(out) <= 3 else 135 if len(out) == 4 else 115
     balanced: list[str] = []
     for b in out:
-        c = _normalize_bullet_ending(_trim_by_words(b, max_chars))
+        trimmed = _trim_by_words(b, max_chars)
+        if trimmed is None:
+            continue
+        c = _normalize_bullet_ending(trimmed)
         if c:
             balanced.append(c)
     return balanced
@@ -191,6 +191,31 @@ def _balance_bullet_density(bullets: list[str]) -> list[str]:
 def _slide_text_signature(slide: BuiltSlide) -> set[str]:
     text = " ".join(slide.bullets).lower()
     return {t for t in _CONTENT_TOKEN_RE.findall(text)}
+
+
+def _normalize_for_overlap(text: str) -> set[str]:
+    n = unicodedata.normalize("NFKD", text.lower())
+    n = "".join(c for c in n if not unicodedata.combining(c))
+    n = _STRIP_PUNCT_RE.sub(" ", n)
+    return {t for t in n.split() if len(t) >= 3 and t not in _BULLET_STOPWORDS}
+
+
+def _is_similar_bullet(a: str, b: str, *, threshold: float = 0.72) -> bool:
+    ta, tb = _normalize_for_overlap(a), _normalize_for_overlap(b)
+    if not ta or not tb:
+        return False
+    return (len(ta & tb) / len(ta | tb)) >= threshold
+
+
+def _dedupe_bullets(bullets: list[str], prior: list[str]) -> list[str]:
+    out: list[str] = []
+    for b in bullets:
+        if any(_is_similar_bullet(b, x) for x in out):
+            continue
+        if any(_is_similar_bullet(b, x) for x in prior):
+            continue
+        out.append(b)
+    return out
 
 
 def _is_near_duplicate_slide(candidate: BuiltSlide, existing: list[BuiltSlide]) -> bool:
@@ -205,6 +230,40 @@ def _is_near_duplicate_slide(candidate: BuiltSlide, existing: list[BuiltSlide]) 
         if jac >= 0.78:
             return True
     return False
+
+
+def _is_intro_title(text: str) -> bool:
+    n = unicodedata.normalize("NFKD", (text or "").lower())
+    n = "".join(c for c in n if not unicodedata.combining(c))
+    n = " ".join(_STRIP_PUNCT_RE.sub(" ", n).split())
+    return n == "introduccion" or n.startswith("introduccion ")
+
+
+def _ensure_intro_first(plan: SlidePlan, kb: KnowledgeBase) -> SlidePlan:
+    """Garantiza la estructura: Introducción -> desarrollo.
+
+    Si existe una slide de introducción, la mueve al inicio. Si no existe,
+    inserta una intro mínima y recorta al máximo permitido.
+    """
+    slides = list(plan.slides)
+    intro_idx = next(
+        (i for i, s in enumerate(slides) if s.kind == "intro" or _is_intro_title(s.title)),
+        None,
+    )
+    if intro_idx is None:
+        intro = PlannedSlide(
+            title="Introducción",
+            kind="intro",
+            atom_ids=[],
+            focus=f"Panorámica general sobre {kb.main_topic}."[:200],
+        )
+        slides.insert(0, intro)
+    elif intro_idx != 0:
+        intro = slides.pop(intro_idx)
+        slides.insert(0, intro)
+    if len(slides) > DEFAULT_NUM_SLIDES_MAX:
+        slides = slides[:DEFAULT_NUM_SLIDES_MAX]
+    return SlidePlan(presentation_title=plan.presentation_title, slides=slides)
 
 
 def _truncate_title(text: str, max_len: int) -> str:
@@ -236,7 +295,10 @@ def _clean_bullet(text: str, max_len: int, slide_title: str | None = None) -> st
     was_trimmed = len(t) > eff_max
     if was_trimmed and not re.search(r"[.!?]\s", t[:eff_max]):
         return None
-    return _normalize_bullet_ending(_trim_by_words(t, eff_max))
+    trimmed = _trim_by_words(t, eff_max)
+    if trimmed is None:
+        return None
+    return _normalize_bullet_ending(trimmed)
 
 
 # ------------------------------------------------- bloques de contexto ----
@@ -331,6 +393,8 @@ def plan_slides(client: OllamaClient, kb: KnowledgeBase) -> SlidePlan:
         plan = SlidePlan(presentation_title=plan.presentation_title,
                          slides=plan.slides[:DEFAULT_NUM_SLIDES_MAX])
 
+    plan = _ensure_intro_first(plan, kb)
+
     plan.presentation_title = _truncate_title(plan.presentation_title, 120)
     for s in plan.slides:
         s.title = _truncate_title(s.title, MAX_CHARS_SLIDE_TITLE)
@@ -381,6 +445,7 @@ def render_slide_bullets(
     plan: SlidePlan,
     index: int,
     total: int,
+    prior_bullets: list[str],
 ) -> list[str]:
     prompt = SLIDE_BULLETS_FROM_ATOMS_PROMPT.format(
         presentation_title=plan.presentation_title,
@@ -390,8 +455,31 @@ def render_slide_bullets(
         focus=(slide.focus or "—"),
         atom_details=_atoms_for_slide(kb, slide),
         outline="\n".join(f"- {s.title}" for s in plan.slides),
+        anti_repeat_context=(
+            "\n".join(f"- {b}" for b in prior_bullets[-8:]) if prior_bullets else "(sin contenido previo)"
+        ),
     )
-    return _render_bullets(client, prompt, slide_title=slide.title, temperature=0.3)
+    first = _dedupe_bullets(
+        _render_bullets(client, prompt, slide_title=slide.title, temperature=0.3),
+        prior_bullets,
+    )
+    if len(first) >= 3:
+        return first
+
+    retry_prompt = (
+        prompt
+        + "\n\nREINTENTO ÚNICO:\n"
+          "- Debes devolver 3-4 bullets completos y cerrados.\n"
+          "- No repitas ideas ya cubiertas en el contenido previo.\n"
+          "- Si no cabe una frase completa, omítela.\n"
+    )
+    retry = _dedupe_bullets(
+        _render_bullets(
+            client, retry_prompt, slide_title=slide.title, temperature=0.2, empty_raises=False
+        ),
+        prior_bullets,
+    )
+    return retry if retry else first
 
 
 def _render_conclusion(
@@ -582,12 +670,15 @@ def build_plan(
 
     total = len(plan.slides)
     built: list[BuiltSlide] = []
+    accepted_bullets: list[str] = []
     for i, ps in enumerate(plan.slides, start=1):
         if progress_cb:
             progress_cb("slides", i, total,
                         f"Redactando slide {i}/{total} ({ps.kind}): {ps.title}")
         try:
-            bullets = render_slide_bullets(client, kb, ps, plan, index=i, total=total)
+            bullets = render_slide_bullets(
+                client, kb, ps, plan, index=i, total=total, prior_bullets=accepted_bullets
+            )
         except GenerationError as exc:
             logger.warning("Fallo al generar slide '%s': %s", ps.title, exc)
             bullets = []
@@ -596,6 +687,7 @@ def build_plan(
             logger.info("Slide duplicada por contenido descartada: '%s'", ps.title)
             continue
         built.append(candidate)
+        accepted_bullets.extend(bullets)
 
     if refine:
         if progress_cb:

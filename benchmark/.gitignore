@@ -1,0 +1,10 @@
+# Artefactos generados por el benchmark: no se versionan.
+results/
+reports/
+# Pero sí se mantienen las carpetas (con un placeholder) para que el
+# repositorio sea navegable.
+!results/.gitkeep
+!reports/.gitkeep
+# PDFs del dataset local: el usuario los provee, no se empaquetan.
+dataset/pdfs/*
+!dataset/pdfs/.gitkeep

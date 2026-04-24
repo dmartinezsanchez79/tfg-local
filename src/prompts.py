@@ -56,9 +56,10 @@ REGLAS
    def:<slug> · ex:<slug> · fc:<slug> · dt:<slug> · rel:<slug>
 4. `subtopic` coherente con la lista `subtopics`.
 5. Los ejemplos (`examples`) son ENTIDADES concretas del documento
-   (p. ej. "Bicicleta"); extrae `attributes` y `methods` cuando aparezcan.
+   (p. ej. "enzima", "algoritmo", "empresa", "célula"); extrae
+   `attributes` y `methods` cuando aparezcan.
 6. Relaciones: tripletas `(source, kind, target)`.
-7. Conclusiones: 3-5 frases sustantivas.
+7. Conclusiones:Muy importante mínimo 3 y máximo 5 frases sustantivas.
 8. Responde SOLO con JSON válido. Sin markdown. Sin texto extra. Español.
 
 ESQUEMA
@@ -88,8 +89,8 @@ SLIDE_PLAN_PROMPT = """\
 Eres el diseñador pedagógico de una presentación académica.
 
 Dispones de una KB con subtemas, definiciones, ejemplos, fórmulas/código,
-datos y relaciones. Cada átomo tiene un `id` estable (p.ej. `def:objeto`,
-`ex:bicicleta`, `rel:herencia`).
+datos y relaciones. Cada átomo tiene un `id` estable (p.ej. `def:concepto`,
+`ex:caso_x`, `rel:dependencia`).
 
 OBJETIVO
 Producir un SlidePlan JSON que asigne átomos a slides de contenido.
@@ -144,28 +145,36 @@ formato `id · tipo · …`):
 ÍNDICE COMPLETO (solo para no duplicar entre slides):
 {outline}
 
+CONTENIDO YA CUBIERTO EN SLIDES ANTERIORES (evítalo):
+{anti_repeat_context}
+
 REGLAS
-1. Máximo __MAX_BULLETS__ bullets (ideal 3-4). Cada uno es UNA frase
-   completa, 12-28 palabras, nunca más de __MAX_CHARS__ caracteres.
-   Si no cabe, reformula más breve; no uses puntos suspensivos.
-2. Prohibido copiar del bloque de átomos: ni los prefijos `def:`, `ex:`,
+1. Devuelve 3 o 4 bullets (5 solo si el contenido lo exige de forma clara).
+   Cada bullet es UNA frase completa y cerrada, 10-22 palabras, nunca más de
+   __MAX_CHARS__ caracteres. Si no cabe, reformula más breve.
+   Prohibido usar puntos suspensivos.
+2. Cada bullet DEBE terminar con punto final y nunca puede acabar en una
+   palabra suelta como "de", "del", "la", "el", "y", "o", "en", "con", "por".
+3. Prohibido copiar del bloque de átomos: ni los prefijos `def:`, `ex:`,
    `fc:`, `rel:`, `dt:`, ni el patrón "concepto · tipo · …".
-3. Prohibida la notación técnica de relaciones: nunca escribas tripletas
+4. Prohibida la notación técnica de relaciones: nunca escribas tripletas
    con flechas y corchetes ("X —[subclase_de]→ Y"). Traduce siempre al
    español natural: "X es subclase de Y", "X hereda de Y", "X se compone
    de Y", "X contiene Y", etc.
-4. Prohibido lenguaje meta ("en este apartado…", "se habla de…",
+5. Prohibido lenguaje meta ("en este apartado…", "se habla de…",
    "es importante destacar…", "permite comprender…").
-5. El primer bullet NO puede repetir el título de la slide: entra directo
+6. El primer bullet NO puede repetir el título de la slide: entra directo
    al contenido (atributos, ejemplos, consecuencias).
-6. Sin anglicismos gratuitos ("blueprint" → "plantilla"; no "inheritance",
+7. Sin anglicismos gratuitos ("blueprint" → "plantilla"; no "inheritance",
    "overriding" ni "concretada").
-7. Cada bullet aporta información nueva (datos, atributos, comparaciones,
+8. Cada bullet aporta información nueva (datos, atributos, comparaciones,
    consecuencias); nada de generalidades.
-8. Los bullets se apoyan SOLO en los átomos asignados. No inventes
-   entidades ni analogías nuevas (si los átomos hablan de "Bicicleta",
-   no uses "Coche", "Vehículo" ni "Animal").
-9. Responde SOLO JSON válido.
+9. Los bullets se apoyan SOLO en los átomos asignados. No inventes
+   entidades ni analogías nuevas (si los átomos hablan de la entidad X,
+   no la sustituyas por otra entidad distinta Y).
+10. Responde SOLO JSON válido.
+11. No repitas ideas ya incluidas en "CONTENIDO YA CUBIERTO"; aporta
+   información nueva para esta slide.
 
 PAUTAS POR TIPO
 - definition : definición + ejemplo concreto + consecuencia/relación.
@@ -181,12 +190,12 @@ PAUTAS POR TIPO
 - outlook    : afirmaciones panorámicas sustantivas, no repiten detalles.
 
 EJEMPLOS BUENOS
-- "Un objeto agrupa estado (atributos) y comportamiento (métodos) como
-  una entidad única del dominio."
-- "Bicicleta: atributos velocidad, cadencia, marcha; métodos
-  cambiarMarcha, frenar, cambiarCadencia."
-- "BicicletaDeMontaña es subclase de Bicicleta: hereda velocidad y
-  cadencia, y sobrescribe cambiarMarcha para terreno irregular."
+- "La variable dependiente cambia en función de la concentración del
+  reactivo y del tiempo de exposición."
+- "El algoritmo ordena la lista en tiempo O(n log n) usando una fase de
+  particionado y combinaciones sucesivas."
+- "La clase derivada hereda la interfaz común y redefine un método para
+  adaptar el comportamiento al nuevo contexto."
 
 FORMATO
 @@OPEN@@
