@@ -30,8 +30,7 @@ NUM_CTX: Final[int] = 8192  # ventana de contexto típica para 8-12GB VRAM
 # Caracteres por chunk: ~3000 caracteres ≈ ~750 tokens, deja margen para prompt + respuesta
 CHUNK_SIZE_CHARS: Final[int] = 3000
 CHUNK_OVERLAP_CHARS: Final[int] = 250
-MAX_INPUT_CHARS: Final[int] = 50_000  # límite duro de entrada
-MAX_INPUT_PAGES: Final[int] = 50
+MAX_INPUT_CHARS: Final[int] = 90_000  # límite duro de entrada
 
 # --- Quiz ---
 # Rango fijo de preguntas: simplifica la interfaz y mantiene consistencia

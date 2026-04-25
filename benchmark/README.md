@@ -84,7 +84,9 @@ Reports agregados en `benchmark/reports/`:
   por clave (`pdf_id`, `model`):
   - si ejecutas una combinación nueva, añade fila;
   - si repites el mismo `pdf_id` y el mismo `model`, reemplaza su fila.
-  Es el fichero principal para análisis.
+  Incluye además trazas de longitud del documento (`pdf_num_chars_catalog`,
+  `pdf_num_chars_extracted`, `pdf_truncated`). Es el fichero principal
+  para análisis.
 * `model_averages.csv` — media por modelo de las métricas numéricas,
   calculada sobre todo el histórico `status=ok`.
 * `manual_evaluation_template.csv` — plantilla para puntuar a mano una
@@ -153,13 +155,19 @@ El benchmark se apoya en tres capas de evaluación, **complementarias**:
   "id": "poo",                          // identificador corto
   "filename": "ProgOrientadaObjetos.pdf",
   "title": "Programación Orientada a Objetos",
-  "pages": null,                        // informativo, puede ser null
+  "num_chars": 26380,                   // longitud aproximada del texto extraído
   "has_tables": false,
   "has_images": true,
   "domain": "programacion",
-  "length_category": "medio"            // corto / medio / largo
+  "length_category": "medio"            // bajo (0-20k), medio (20k-50k), alto (>50k)
 }
 ```
+
+Criterio recomendado para `length_category` (por `num_chars`):
+
+- `bajo`: 0 a 20.000
+- `medio`: 20.001 a 50.000
+- `alto`: más de 50.000
 
 Los PDFs pueden estar en `benchmark/dataset/pdfs/` **o** en la carpeta
 `PDF/` de la raíz del proyecto: el runner los busca en ese orden.

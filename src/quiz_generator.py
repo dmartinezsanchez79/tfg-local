@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import math
 import re
+import unicodedata
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
@@ -183,6 +184,11 @@ def _normalize_plan_entries(raw: dict[str, Any]) -> None:
             q["bloom_level"] = _normalize_bloom(q["bloom_level"])
         if "kind" in q:
             q["kind"] = _normalize_kind(q["kind"], q.get("bloom_level"))
+
+
+def _deaccent_lower(text: str) -> str:
+    n = unicodedata.normalize("NFKD", text)
+    return "".join(ch for ch in n if not unicodedata.combining(ch)).lower()
 
 
 # =========================================================================
@@ -443,6 +449,47 @@ def _try_generate_question(
     return q
 
 
+def _fill_min_questions_with_fallback(
+    questions: list[QuizQuestion],
+    kb: KnowledgeBase,
+    *,
+    min_q: int,
+    max_q: int,
+) -> list[QuizQuestion]:
+    """Completa hasta `min_q` con preguntas deterministas si la salida quedó corta."""
+    if len(questions) >= min_q:
+        return questions[:max_q]
+
+    logger.warning(
+        "Quiz por debajo del mínimo (%d<%d). Rellenando con fallback determinístico.",
+        len(questions), min_q,
+    )
+    used_ids = {q.id for q in questions}
+    used_stems = {_deaccent_lower(q.question) for q in questions}
+
+    emergency = sanitize_quiz_plan(
+        build_fallback_quiz_plan(kb, target_count=min_q),
+        kb,
+        target_count=min_q,
+    )
+    for planned in emergency.questions:
+        if len(questions) >= min_q or len(questions) >= max_q:
+            break
+        atom = kb.get_atom(planned.concept_id)
+        if atom is None:
+            continue
+        q = _build_deterministic_question(planned, atom)
+        stem = _deaccent_lower(q.question)
+        if stem in used_stems:
+            continue
+        q.id = max(used_ids, default=0) + 1
+        used_ids.add(q.id)
+        used_stems.add(stem)
+        questions.append(q)
+
+    return questions[:max_q]
+
+
 # =========================================================================
 # API pública
 # =========================================================================
@@ -509,6 +556,13 @@ def generate_quiz(
                     len(questions), min_q, max_q, len(review.issues))
     elif len(questions) > max_q:
         questions = questions[:max_q]
+
+    questions = _fill_min_questions_with_fallback(
+        questions,
+        kb,
+        min_q=min_q,
+        max_q=max_q,
+    )
 
     if not questions:
         raise GenerationError("Tras filtrar por calidad no quedó ninguna pregunta aprobada.")

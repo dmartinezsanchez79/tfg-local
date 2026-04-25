@@ -143,6 +143,7 @@ def run_single(
     # Imports diferidos: así `python -m benchmark.runner --help` no exige
     # que Ollama/pymupdf/etc. estén instalados.
     from src.map_reduce import build_knowledge_base
+    from src.config import MAX_INPUT_CHARS
     from src.ollama_client import OllamaClient
     from src.pdf_processor import process_pdf
     from src.pptx_generator import generate_presentation
@@ -159,6 +160,9 @@ def run_single(
         "status": "pending",
         "error": "",
         "timings": timings,
+        "pdf_info": {
+            "catalog_num_chars": pdf.meta.get("num_chars"),
+        },
         "kb_info": {},
         "quiz_metrics": None,
         "pptx_metrics": None,
@@ -170,6 +174,12 @@ def run_single(
         # 1) PDF → Markdown
         logger.info("[%s × %s] procesando PDF…", pdf.id, model)
         processed = process_pdf(pdf.path.read_bytes())
+        record["pdf_info"].update({
+            "extracted_num_chars": processed.num_chars,
+            "truncated": processed.num_chars >= MAX_INPUT_CHARS,
+            "num_images": processed.num_images,
+            "has_tables_detected": processed.has_tables,
+        })
 
         # 2) Ollama preflight
         client = OllamaClient(model=model)

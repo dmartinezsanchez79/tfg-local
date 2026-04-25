@@ -233,7 +233,7 @@ def render_upload_section() -> None:
     uploaded = st.file_uploader(
         "Arrastra o selecciona un PDF",
         type=["pdf"],
-        help=f"Máximo {MAX_INPUT_PAGES} páginas / 50.000 caracteres.",
+        help=f"Máximo 90.000 caracteres de texto.",
     )
     if uploaded is None:
         return
@@ -265,7 +265,11 @@ def render_upload_section() -> None:
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Páginas", processed.num_pages)
     col2.metric("Caracteres", f"{processed.num_chars:,}")
-    col3.metric("Imágenes", processed.num_images)
+    col3.metric(
+        "Imágenes detectadas (bruto)",
+        processed.num_images,
+        help="Puede incluir logos, iconos o elementos decorativos.",
+    )
     col4.metric("Tablas detectadas", "Sí" if processed.has_tables else "No")
 
     with st.expander("Ver Markdown extraído (primeros 2.000 caracteres)"):

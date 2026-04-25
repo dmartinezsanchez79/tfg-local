@@ -27,6 +27,8 @@ from .judge_prompts import PPTX_CRITERIA, QUIZ_CRITERIA, rubric_reference_text
 _SUMMARY_COLUMNS: tuple[str, ...] = (
     "pdf_id", "pdf_title", "model",
     "status", "error",
+    "pdf_num_chars_catalog", "pdf_num_chars_extracted", "pdf_truncated",
+    "pdf_num_images", "pdf_has_tables_detected",
     "time_total_s", "time_kb_s", "time_quiz_s", "time_pptx_s",
     "kb_atoms", "kb_subtopics",
     # quiz
@@ -42,12 +44,16 @@ _SUMMARY_COLUMNS: tuple[str, ...] = (
     "pptx_index_coherence", "pptx_score",
 )
 
+_CSV_DELIMITER = ";"
+_CSV_ENCODING = "utf-8-sig"  # BOM para que Excel (ES) abra columnas correctamente
+
 
 def _flatten_record(record: dict[str, Any]) -> dict[str, Any]:
     """Aplana un dict de métricas al esquema de ``_SUMMARY_COLUMNS``."""
     quiz = record.get("quiz_metrics") or {}
     pptx = record.get("pptx_metrics") or {}
     timings = record.get("timings") or {}
+    pdf_info = record.get("pdf_info") or {}
     kb_info = record.get("kb_info") or {}
 
     return {
@@ -56,6 +62,11 @@ def _flatten_record(record: dict[str, Any]) -> dict[str, Any]:
         "model": record.get("model", ""),
         "status": record.get("status", ""),
         "error": (record.get("error") or "").replace("\n", " ")[:300],
+        "pdf_num_chars_catalog": pdf_info.get("catalog_num_chars", ""),
+        "pdf_num_chars_extracted": pdf_info.get("extracted_num_chars", ""),
+        "pdf_truncated": pdf_info.get("truncated", ""),
+        "pdf_num_images": pdf_info.get("num_images", ""),
+        "pdf_has_tables_detected": pdf_info.get("has_tables_detected", ""),
         "time_total_s": timings.get("total_s", ""),
         "time_kb_s": timings.get("kb_s", ""),
         "time_quiz_s": timings.get("quiz_s", ""),
@@ -105,8 +116,8 @@ def write_summary_csv(records: Iterable[dict[str, Any]], out_path: Path | None =
         merged.values(),
         key=lambda row: (str(row.get("pdf_id", "")), str(row.get("model", ""))),
     )
-    with path.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=_SUMMARY_COLUMNS)
+    with path.open("w", newline="", encoding=_CSV_ENCODING) as fh:
+        writer = csv.DictWriter(fh, fieldnames=_SUMMARY_COLUMNS, delimiter=_CSV_DELIMITER)
         writer.writeheader()
         for row in ordered_rows:
             writer.writerow(row)
@@ -116,6 +127,7 @@ def write_summary_csv(records: Iterable[dict[str, Any]], out_path: Path | None =
 # --- medias por modelo ----------------------------------------------------
 
 _NUMERIC_AVG_COLUMNS: tuple[str, ...] = (
+    "pdf_num_chars_catalog", "pdf_num_chars_extracted",
     "time_total_s", "time_kb_s", "time_quiz_s", "time_pptx_s",
     "quiz_num_questions", "quiz_bloom_diversity",
     "quiz_duplicate_pairs", "quiz_unbalanced_options",
@@ -159,8 +171,8 @@ def write_model_averages(
         by_model.setdefault(str(row.get("model", "?")), []).append(row)
 
     columns = ("model", "runs_ok", *_NUMERIC_AVG_COLUMNS)
-    with path.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=columns)
+    with path.open("w", newline="", encoding=_CSV_ENCODING) as fh:
+        writer = csv.DictWriter(fh, fieldnames=columns, delimiter=_CSV_DELIMITER)
         writer.writeheader()
         for model, rows in sorted(by_model.items()):
             out: dict[str, Any] = {"model": model, "runs_ok": len(rows)}
@@ -186,8 +198,8 @@ def write_manual_template(
     rows = _read_existing_summary(summary_path)
 
     columns = ("execution_id", "pdf_id", "model", "artifact_type", "criterion", "score_1_5", "notes")
-    with path.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=columns)
+    with path.open("w", newline="", encoding=_CSV_ENCODING) as fh:
+        writer = csv.DictWriter(fh, fieldnames=columns, delimiter=_CSV_DELIMITER)
         writer.writeheader()
         for r in rows:
             if (r.get("status") or "") != "ok":
@@ -233,8 +245,12 @@ def _summary_key(row: dict[str, Any]) -> tuple[str, str]:
 def _read_existing_summary(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
-    with path.open("r", newline="", encoding="utf-8") as fh:
-        reader = csv.DictReader(fh)
+    with path.open("r", newline="", encoding=_CSV_ENCODING) as fh:
+        # Compatibilidad: soporta históricos antiguos con ',' y nuevos con ';'
+        sample = fh.read(2048)
+        fh.seek(0)
+        delimiter = _CSV_DELIMITER if sample.count(";") >= sample.count(",") else ","
+        reader = csv.DictReader(fh, delimiter=delimiter)
         rows: list[dict[str, Any]] = []
         for row in reader:
             normalized = {col: row.get(col, "") for col in _SUMMARY_COLUMNS}

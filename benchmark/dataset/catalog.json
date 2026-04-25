@@ -5,7 +5,7 @@
       "id": "poo",
       "filename": "ProgOrientadaObjetos.pdf",
       "title": "Programación Orientada a Objetos",
-      "pages": null,
+      "num_chars": 25464,
       "has_tables": false,
       "has_images": true,
       "domain": "programacion",
@@ -15,27 +15,27 @@
       "id": "ia",
       "filename": "InteligenciaArtificial.pdf",
       "title": "Inteligencia Artificial",
-      "pages": null,
+      "num_chars": 31140,
       "has_tables": true,
       "has_images": true,
       "domain": "ia",
-      "length_category": "largo"
+      "length_category": "medio"
     },
     {
       "id": "bbdd",
       "filename": "BasesDatosDistribuidas.pdf",
       "title": "Bases de Datos Distribuidas",
-      "pages": null,
+      "num_chars": 39215,
       "has_tables": true,
       "has_images": false,
       "domain": "bbdd",
-      "length_category": "corto"
+      "length_category": "medio"
     },
     {
       "id": "bigdata",
       "filename": "FundamentosBigData.pdf",
       "title": "Fundamentos de Big Data",
-      "pages": null,
+      "num_chars": 39663,
       "has_tables": true,
       "has_images": true,
       "domain": "datos",
@@ -45,11 +45,31 @@
       "id": "pln",
       "filename": "ProcesamientoLenguajeNatural.pdf",
       "title": "Procesamiento de Lenguaje Natural",
-      "pages": null,
+      "num_chars": 38548,
       "has_tables": false,
       "has_images": true,
       "domain": "ia",
       "length_category": "medio"
+    },
+    {
+      "id": "teoria_educacion",
+      "filename": "teoria-educacion.pdf",
+      "title": "Teoría de la educación",
+      "num_chars": 86700,
+      "has_tables": false,
+      "has_images": true,
+      "domain": "educacion",
+      "length_category": "alto"
+    },
+    {
+      "id": "enfermeria_cuidados",
+      "filename": "Gestion-cuidados-enfermeria.pdf",
+      "title": "Gestión de cuidados en enfermería",
+      "num_chars": 54433,
+      "has_tables": true,
+      "has_images": true,
+      "domain": "salud",
+      "length_category": "alto"
     }
   ]
 }
