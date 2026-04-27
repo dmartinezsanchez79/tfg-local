@@ -1,0 +1,7 @@
+﻿.venv/
+__pycache__/
+*.pyc
+.git/
+benchmark/results/
+benchmark/reports/
+_extracted_markdown_test.md

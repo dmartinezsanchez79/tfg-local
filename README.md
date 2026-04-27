@@ -219,7 +219,9 @@ Wrapper sobre `ollama-python` con:
 Conversión PDF → Markdown con PyMuPDF y pymupdf4llm. Aporta:
 
 - **Detección de escaneos** (`_detect_scanned`): si menos del 30 % de páginas tienen ≥40 caracteres extraíbles, se lanza `ScannedPDFError` con sugerencia de OCR.
-- **Extracción de pies de imagen** (`_extract_image_context`): para cada imagen se busca el bloque de texto más cercano verticalmente como caption; se añade al final del Markdown bajo `## Contexto de imágenes`. Da al LLM contexto visual sin depender de visión por computador.
+- **Normalización ligera de tablas** (`_normalize_markdown_tables`): limpia tablas GFM para hacerlas más legibles por LLM (normaliza `<br>` a ` / ` y recompone líneas partidas).
+- **Extracción de contexto visual** (`_extract_image_context`): para cada imagen suficientemente grande en la página se busca el bloque de texto más cercano verticalmente como caption; se añade al final del Markdown bajo `## Contexto visual detectado` con formato `[p.X, WxH] texto`.
+- **Filtro de ruido visual**: descarta imágenes muy pequeñas (logos/iconos) por ratio de área relativa de página para reducir falsos positivos.
 - **Detección de tablas** (`_looks_like_tables`): busca líneas separadoras GFM (`---|---`) en el markdown resultante.
 - **Límites duros**: páginas (`MAX_INPUT_PAGES`) y caracteres (`MAX_INPUT_CHARS`).
 
@@ -542,7 +544,46 @@ streamlit run app.py
 
 Abre `http://localhost:8501` y sigue el flujo: subir PDF → generar Quiz / Presentación → descargar.
 
-### 8.5. Troubleshooting frecuente
+### 8.5. Ejecutar con Docker (sin Ollama en contenedor)
+
+Este proyecto se dockeriza solo para la app Streamlit. **Ollama NO va dentro
+del contenedor**; se usa el Ollama del host.
+
+1. Asegúrate de tener Ollama corriendo en el host:
+
+```powershell
+ollama serve
+```
+
+2. Construir imagen:
+
+```powershell
+docker compose build
+```
+
+3. Arrancar contenedor:
+
+```powershell
+docker compose up -d
+```
+
+4. Abrir app:
+
+`http://localhost:8501`
+
+5. Parar contenedor:
+
+```powershell
+docker compose down
+```
+
+`docker-compose.yml` ya inyecta:
+
+`OLLAMA_BASE_URL=http://host.docker.internal:11434`
+
+para que la app dentro del contenedor se conecte al Ollama del host.
+
+### 8.6. Troubleshooting frecuente
 
 | Síntoma | Causa / solución |
 |---|---|
@@ -557,6 +598,27 @@ Abre `http://localhost:8501` y sigue el flujo: subir PDF → generar Quiz / Pres
 ## 9. Historial de mejoras (changelog técnico)
 
 Cada entrada lista **qué se hizo**, **por qué** y **qué archivos cambiaron**. A partir de ahora se amplía con cada nueva intervención.
+
+### v2.13.1 — Extracción PDF más útil (tablas + contexto visual)
+
+Objetivo: mejorar calidad de markdown para modelos pequeños y reducir ruido sin añadir complejidad alta.
+
+Cambios:
+
+- **`src/pdf_processor.py`**
+  - Nueva normalización de tablas markdown (`_normalize_markdown_tables`) para:
+    - reemplazar `<br>` por separador legible ` / `,
+    - recomponer filas partidas por salto de línea.
+  - Mejora de `_extract_image_context`:
+    - añade metadatos mínimos útiles por imagen: página y tamaño (`[p.X, WxH]`),
+    - renombra bloque final a `## Contexto visual detectado`.
+  - Nuevo filtro por área relativa (`_MIN_IMAGE_AREA_RATIO`) para ignorar imágenes muy pequeñas (logos/iconos), reduciendo ruido en la señal visual.
+
+Motivo:
+
+- El markdown anterior incluía tablas con cortes internos difíciles de interpretar por el LLM.
+- El bloque visual era poco informativo y mezclaba elementos decorativos con figuras relevantes.
+- Esta versión mantiene el pipeline simple/offline y mejora grounding visual sin meter OCR ni visión multimodal.
 
 ### v1.0 — Base funcional inicial
 

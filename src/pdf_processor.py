@@ -27,6 +27,8 @@ logger = logging.getLogger(__name__)
 _MIN_CHARS_PER_PAGE: int = 40
 # Fracción mínima de páginas con texto real para no considerarlo escaneado.
 _MIN_TEXT_PAGE_FRACTION: float = 0.3
+# Umbral para descartar iconos/logos pequeños en el bloque de contexto visual.
+_MIN_IMAGE_AREA_RATIO: float = 0.02
 
 
 @dataclass(frozen=True)
@@ -55,6 +57,39 @@ def _detect_scanned(doc: pymupdf.Document) -> bool:
     return fraction < _MIN_TEXT_PAGE_FRACTION
 
 
+def _is_table_row(line: str) -> bool:
+    s = line.strip()
+    return s.startswith("|") and s.count("|") >= 2
+
+
+def _normalize_markdown_tables(markdown: str) -> str:
+    """Mejora la legibilidad de tablas GFM sin alterar el resto del texto.
+
+    - Une líneas partidas dentro de una tabla.
+    - Normaliza `<br>` a ` / ` para evitar celdas visualmente rotas.
+    """
+    lines = markdown.splitlines()
+    out: list[str] = []
+    in_table = False
+    for raw in lines:
+        line = raw.rstrip()
+        if _is_table_row(line):
+            in_table = True
+            normalized = re.sub(r"\s*<br>\s*", " / ", line, flags=re.IGNORECASE)
+            normalized = re.sub(r"\s+", " ", normalized).strip()
+            out.append(normalized)
+            continue
+        if in_table and line.strip():
+            # Continuación de celda (pymupdf4llm a veces parte filas en dos líneas).
+            if out:
+                continuation = re.sub(r"\s*<br>\s*", " / ", line.strip(), flags=re.IGNORECASE)
+                out[-1] = f"{out[-1]} {continuation}".strip()
+            continue
+        in_table = False
+        out.append(line)
+    return "\n".join(out)
+
+
 def _extract_image_context(doc: pymupdf.Document) -> list[str]:
     """Extrae fragmentos breves de texto cercano a cada imagen como pie de foto.
 
@@ -63,11 +98,12 @@ def _extract_image_context(doc: pymupdf.Document) -> list[str]:
     útil al LLM sin depender de OCR ni de modelos externos.
     """
     captions: list[str] = []
-    for page in doc:
+    for page_num, page in enumerate(doc, start=1):
         try:
             images = page.get_images(full=True)
             if not images:
                 continue
+            page_area = max(1.0, page.rect.width * page.rect.height)
             blocks = page.get_text("blocks") or []
             # blocks: (x0, y0, x1, y1, text, block_no, block_type, ...)
             text_blocks = [b for b in blocks if len(b) >= 5 and isinstance(b[4], str) and b[4].strip()]
@@ -80,6 +116,9 @@ def _extract_image_context(doc: pymupdf.Document) -> list[str]:
                     if not rects:
                         continue
                     img_rect = rects[0]
+                    area_ratio = (img_rect.width * img_rect.height) / page_area
+                    if area_ratio < _MIN_IMAGE_AREA_RATIO:
+                        continue
                     # Bloque más cercano por distancia vertical a la imagen.
                     closest = min(
                         text_blocks,
@@ -91,7 +130,9 @@ def _extract_image_context(doc: pymupdf.Document) -> list[str]:
                     caption = closest[4].strip().replace("\n", " ")
                     caption = re.sub(r"\s+", " ", caption)
                     if 10 <= len(caption) <= 300:
-                        captions.append(caption)
+                        w = int(img_rect.width)
+                        h = int(img_rect.height)
+                        captions.append(f"[p.{page_num}, {w}x{h}] {caption}")
                 except Exception:  # noqa: BLE001 — imagen individual no crítica
                     continue
         except Exception as exc:  # noqa: BLE001
@@ -166,10 +207,11 @@ def process_pdf(pdf_bytes: bytes | BinaryIO) -> ProcessedPDF:
         if not markdown or not markdown.strip():
             raise PDFError("No se pudo extraer texto del PDF.")
 
+        markdown = _normalize_markdown_tables(markdown)
         captions = _extract_image_context(doc)
         num_images = _count_images(doc)
         if captions:
-            markdown += "\n\n## Contexto de imágenes\n"
+            markdown += "\n\n## Contexto visual detectado\n"
             for cap in captions:
                 markdown += f"- {cap}\n"
 
