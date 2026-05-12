@@ -64,7 +64,7 @@ REGLAS
 
 ESQUEMA
 @@OPEN@@
-  "main_topic": "cadena 2-120",
+  "main_topic": "Tema central real del documento (no copies este texto)",
   "subtopics": ["..."],
   "definitions": [@@OPEN@@ "id":"def:slug","term":"...","definition":"...","subtopic":"...","verbatim":false @@CLOSE@@],
   "examples":    [@@OPEN@@ "id":"ex:slug","name":"...","description":"...","attributes":["..."],"methods":["..."],"subtopic":"..." @@CLOSE@@],
@@ -86,43 +86,32 @@ ESQUEMA
 # ----------------------------------------- PLAN DE PRESENTACIÓN -----------
 
 SLIDE_PLAN_PROMPT = """\
-Eres el diseñador pedagógico de una presentación académica.
-
-Dispones de una KB con subtemas, definiciones, ejemplos, fórmulas/código,
-datos y relaciones. Cada átomo tiene un `id` estable (p.ej. `def:concepto`,
-`ex:caso_x`, `rel:dependencia`).
+Diseñas el plan de una presentación académica.
 
 OBJETIVO
-Producir un SlidePlan JSON que asigne átomos a slides de contenido.
-Planificas: no redactes bullets aquí.
+JSON `SlidePlan` que asigna átomos a slides. NO redactes bullets aquí.
 
 REGLAS
-1. Entre __MIN__ y __MAX__ slides de contenido (sin portada, índice ni
-   conclusión final: las añade el sistema).
-2. Cada slide: `title` (máx __TITLE_LEN__ chars), `kind` cerrado, y
-   `atom_ids` con los IDs que cubre.
-3. Tipos admitidos:
-   - intro      : abre el tema. Sin átomos obligatorios.
-   - definition : 1-2 definiciones + 0-1 ejemplo corto.
-   - example    : un ejemplo concreto con atributos/métodos.
-   - comparison : contrasta dos conceptos del documento.
-   - code       : bullets + un fragmento (fc:*).
-   - process    : pasos ordenados.
-   - relations  : relaciones entre entidades (rel:*).
-   - outlook    : visión panorámica sin duplicar detalles.
-   - conclusion : NO USAR (la añade el renderer).
-4. Evita duplicar un átomo en varias slides salvo que aporte valor.
-5. Cubre TODOS los subtemas y la mayoría de átomos relevantes.
-6. No numeres títulos.
-7. Responde SOLO JSON válido.
+1. Entre __MIN__ y __MAX__ slides (sin portada, índice ni conclusión final).
+2. Cada slide: `title` (máx __TITLE_LEN__ chars), `kind` cerrado, `atom_ids`.
+3. Tipos válidos: intro · definition · example · comparison · code · process ·
+   relations · outlook. NO uses "conclusion".
+4. Cada `atom_ids` SOLO contiene IDs presentes en `IDS VÁLIDOS`. Prohibido
+   inventarlos. Si dudas, deja el array vacío.
+5. Cubre los subtemas relevantes; no dupliques átomos salvo que aporte valor.
+6. No numeres los títulos.
 
-FORMATO
+EJEMPLO (formato exacto, contenido ilustrativo):
 @@OPEN@@
-  "presentation_title": "...",
+  "presentation_title": "Programación Orientada a Objetos",
   "slides": [
-    @@OPEN@@ "title":"...","kind":"definition","atom_ids":["def:x","ex:y"],"focus":"..." @@CLOSE@@
+    @@OPEN@@ "title":"Introducción","kind":"intro","atom_ids":[],"focus":"Visión general" @@CLOSE@@,
+    @@OPEN@@ "title":"Clases y objetos","kind":"definition","atom_ids":["def:clase","def:objeto"] @@CLOSE@@
   ]
 @@CLOSE@@
+
+IDS VÁLIDOS (usa SOLO estos):
+{valid_atom_ids}
 
 --- KNOWLEDGE BASE ---
 {kb_context}
@@ -232,35 +221,35 @@ FORMATO
 # ------------------------------------------- PLAN DE QUIZ -----------------
 
 QUIZ_PLAN_PROMPT = """\
-Diseñas el PLAN de un quiz antes de redactar preguntas.
-
-Dispones de una KB con ids estables (def:*, ex:*, fc:*, dt:*, rel:*) y un
-objetivo de {num_questions} preguntas.
+Diseñas el plan de un quiz académico ANTES de redactar las preguntas.
+Objetivo: {num_questions} preguntas.
 
 REGLAS
-1. Distribución Bloom sobre {num_questions} (rangos orientativos):
-   recordar 15-25% · comprender 15-25% · aplicar 20-30% ·
-   analizar 15-25% · evaluar 10-20% · crear 0-10%.
-   Como mínimo 1 de "aplicar" y 1 de "analizar".
-2. `concept_id` ÚNICO por pregunta y presente en la KB.
-3. `kind` coherente con el nivel Bloom:
-   recordar   → "definicion"
-   comprender → "definicion" | "diferenciacion"
-   aplicar    → "caso_practico" | "completar_codigo"
-   analizar   → "comparacion" | "analisis_consecuencia"
-   evaluar    → "juicio_alternativas" | "analisis_consecuencia"
-   crear      → "caso_practico"
+1. Distribución Bloom orientativa sobre {num_questions}:
+   recordar 15-25 % · comprender 15-25 % · aplicar 20-30 % ·
+   analizar 15-25 % · evaluar 10-20 % · crear 0-10 %.
+   Mínimo 1 de "aplicar" y 1 de "analizar".
+2. `concept_id` DEBE estar en `IDS VÁLIDOS`. Si no, NO la incluyas.
+3. `kind` coherente con `bloom_level`:
+   recordar/comprender → "definicion"|"diferenciacion"
+   aplicar/crear       → "caso_practico"|"completar_codigo"
+   analizar            → "comparacion"|"analisis_consecuencia"
+   evaluar             → "juicio_alternativas"|"analisis_consecuencia"
 4. Prioriza ejemplos (ex:*) y relaciones (rel:*) en niveles altos;
-   definiciones puras para recordar.
-5. `focus` opcional: pista narrativa corta.
-6. Responde SOLO JSON válido.
+   definiciones (def:*) para recordar/comprender.
+5. Permitido repetir `concept_id` solo si cambia (bloom_level, kind).
+6. `focus` opcional: pista narrativa corta (≤120 chars).
 
-FORMATO
+EJEMPLO (formato exacto, contenido ilustrativo):
 @@OPEN@@
   "questions": [
-    @@OPEN@@ "id":1,"bloom_level":"recordar","concept_id":"def:objeto","kind":"definicion","focus":"..." @@CLOSE@@
+    @@OPEN@@ "id":1,"bloom_level":"recordar","concept_id":"def:objeto","kind":"definicion" @@CLOSE@@,
+    @@OPEN@@ "id":2,"bloom_level":"aplicar","concept_id":"ex:cuenta","kind":"caso_practico" @@CLOSE@@
   ]
 @@CLOSE@@
+
+IDS VÁLIDOS (usa SOLO estos):
+{valid_atom_ids}
 
 --- KNOWLEDGE BASE ---
 {kb_context}

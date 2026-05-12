@@ -73,6 +73,37 @@ class SlidePlan(BaseModel):
         return v.strip()
 
 
+# JSON Schema plano (sin $refs) que Ollama puede usar como `format=` para
+# forzar salida estructurada. Mantenerlo a mano garantiza compatibilidad
+# con todos los runners locales (algunos no resuelven $defs/$refs).
+SLIDE_PLAN_JSON_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["presentation_title", "slides"],
+    "properties": {
+        "presentation_title": {"type": "string", "minLength": 3, "maxLength": 160},
+        "slides": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 20,
+            "items": {
+                "type": "object",
+                "required": ["title", "kind"],
+                "properties": {
+                    "title": {"type": "string", "minLength": 2, "maxLength": 80},
+                    "kind": {"type": "string", "enum": list(_VALID_SLIDE_KINDS)},
+                    "atom_ids": {
+                        "type": "array",
+                        "maxItems": 12,
+                        "items": {"type": "string"},
+                    },
+                    "focus": {"type": "string", "maxLength": 200},
+                },
+            },
+        },
+    },
+}
+
+
 # ---------------- coerción tolerante del payload del LLM -------------------
 
 _SLIDE_ALIASES: dict[str, tuple[str, ...]] = {
@@ -305,6 +336,46 @@ class QuizPlan(BaseModel):
         return vs
 
 
+# JSON Schema plano para forzar salida estructurada en Ollama. Mantengo los
+# enums abiertos en español para que el LLM pueda devolver alias y luego
+# `_normalize_bloom` / `_normalize_kind` los canonicen.
+QUIZ_PLAN_JSON_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["questions"],
+    "properties": {
+        "questions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 40,
+            "items": {
+                "type": "object",
+                "required": ["bloom_level", "concept_id", "kind"],
+                "properties": {
+                    "id": {"type": "integer", "minimum": 1},
+                    "bloom_level": {
+                        "type": "string",
+                        "enum": [
+                            "recordar", "comprender", "aplicar",
+                            "analizar", "evaluar", "crear",
+                        ],
+                    },
+                    "concept_id": {"type": "string", "minLength": 3, "maxLength": 80},
+                    "kind": {
+                        "type": "string",
+                        "enum": [
+                            "definicion", "diferenciacion", "caso_practico",
+                            "comparacion", "analisis_consecuencia",
+                            "juicio_alternativas", "completar_codigo",
+                        ],
+                    },
+                    "focus": {"type": "string", "maxLength": 200},
+                },
+            },
+        },
+    },
+}
+
+
 # ---------------- coerción tolerante del payload del LLM -------------------
 
 _QUIZ_ALIASES: dict[str, tuple[str, ...]] = {
@@ -317,8 +388,23 @@ _QUIZ_ALIASES: dict[str, tuple[str, ...]] = {
 }
 
 
+# Ciclo Bloom usado cuando el LLM omite el campo en alguna pregunta. Cubre
+# los 6 niveles ponderando los más frecuentes ("recordar", "comprender",
+# "aplicar"). El orden importa: garantiza diversidad sin necesidad de RNG.
+_BLOOM_FALLBACK_CYCLE: tuple[str, ...] = (
+    "recordar", "comprender", "aplicar", "analizar",
+    "comprender", "aplicar", "evaluar", "recordar",
+    "comprender", "analizar", "aplicar", "comprender",
+)
+
+
 def coerce_quiz_plan_payload(raw: Any) -> dict[str, Any] | None:
-    """Normaliza la respuesta del LLM al esquema canónico de `QuizPlan`."""
+    """Normaliza la respuesta del LLM al esquema canónico de `QuizPlan`.
+
+    Permisivo: si falta `bloom_level` o `kind`, se infieren (ciclo Bloom y
+    `BLOOM_RECOMMENDED_KINDS`). Solo se descarta una pregunta si tampoco
+    hay `concept_id`, porque sin átomo no podemos redactarla.
+    """
     if isinstance(raw, list):
         raw = {"questions": raw}
     if not isinstance(raw, dict):
@@ -341,11 +427,21 @@ def coerce_quiz_plan_payload(raw: Any) -> dict[str, Any] | None:
         except (ValueError, TypeError):
             q["id"] = idx
 
-        bloom = _pick(item, _QUIZ_ALIASES["bloom"])
         concept = _pick(item, _QUIZ_ALIASES["concept"])
-        kind = _pick(item, _QUIZ_ALIASES["kind"])
-        if bloom is None or concept is None or kind is None:
+        if concept is None or not str(concept).strip():
             continue
+
+        bloom = _pick(item, _QUIZ_ALIASES["bloom"])
+        if bloom is None:
+            bloom = _BLOOM_FALLBACK_CYCLE[(idx - 1) % len(_BLOOM_FALLBACK_CYCLE)]
+
+        kind = _pick(item, _QUIZ_ALIASES["kind"])
+        if kind is None:
+            recommended = BLOOM_RECOMMENDED_KINDS.get(
+                str(bloom).strip().lower(), ("definicion",)  # type: ignore[arg-type]
+            )
+            kind = recommended[0]
+
         q["bloom_level"] = bloom
         q["concept_id"] = str(concept).strip()
         q["kind"] = kind
@@ -547,14 +643,54 @@ def _reconcile(raw_ids: list[str], valid: set[str]) -> tuple[list[str], list[str
     return resolved, lost
 
 
-def sanitize_slide_plan(plan: SlidePlan, kb: KnowledgeBase) -> SlidePlan:
-    """Filtra `atom_ids` inexistentes y descarta slides que queden vacías.
+def _atoms_by_kind(kb: KnowledgeBase) -> dict[str, list[str]]:
+    """IDs de la KB agrupados por el `kind` de slide al que mejor encajan."""
+    return {
+        "definition": [d.id for d in kb.definitions],
+        "example":    [e.id for e in kb.examples],
+        "code":       [f.id for f in kb.formulas_code],
+        "relations":  [r.id for r in kb.relations],
+        "outlook":    [n.id for n in kb.numeric_data],
+    }
 
-    La slide de conclusión la inserta el renderer PPTX: si el LLM la incluyó,
-    se descarta aquí para evitar duplicarla.
+
+def _rescue_slide_atoms(
+    slide: PlannedSlide,
+    by_kind: dict[str, list[str]],
+    used: set[str],
+) -> list[str]:
+    """Asigna 1-3 átomos no usados a una slide cuyos `atom_ids` se perdieron.
+
+    Prioridad: mismo kind que la slide → cualquier átomo libre. Esto es
+    crítico para que las slides del LLM con IDs inventados sigan
+    materializándose con contenido real en lugar de descartarse.
+    """
+    pool: list[str] = []
+    primary = by_kind.get(slide.kind, [])
+    pool.extend(aid for aid in primary if aid not in used)
+    if len(pool) < 3:
+        for ids in by_kind.values():
+            for aid in ids:
+                if aid not in used and aid not in pool:
+                    pool.append(aid)
+                if len(pool) >= 3:
+                    break
+            if len(pool) >= 3:
+                break
+    return pool[:3]
+
+
+def sanitize_slide_plan(plan: SlidePlan, kb: KnowledgeBase) -> SlidePlan:
+    """Filtra `atom_ids` inexistentes y rescata slides que queden vacías.
+
+    Permisivo: en vez de descartar una slide sin átomos válidos, intenta
+    asignarle átomos libres del mismo kind. Solo descarta duplicados
+    estrictos y slides de tipo "conclusion" (las añade el renderer).
     """
     valid = set(kb.atom_ids())
+    by_kind = _atoms_by_kind(kb)
     cleaned: list[PlannedSlide] = []
+    used: set[str] = set()
 
     has_intro = False
     for slide in plan.slides:
@@ -564,11 +700,21 @@ def sanitize_slide_plan(plan: SlidePlan, kb: KnowledgeBase) -> SlidePlan:
         intro_like = slide.kind == "intro" or norm_title.startswith("introduc")
         if intro_like and has_intro:
             continue
+
         resolved, lost = _reconcile(slide.atom_ids, valid)
         if lost:
             logger.info("SlidePlan: '%s' descartó ids: %s", slide.title, lost)
+
+        # Rescate: si la slide pierde TODOS sus átomos y no es una intro/outlook,
+        # le asignamos átomos libres en lugar de descartarla.
         if not resolved and slide.kind not in {"intro", "outlook"}:
-            continue
+            resolved = _rescue_slide_atoms(slide, by_kind, used)
+            if resolved:
+                logger.info(
+                    "SlidePlan: '%s' sin átomos válidos; rescatada con %s",
+                    slide.title, resolved,
+                )
+
         repaired = slide.model_copy(
             update={"title": _humanize_title(slide.title), "atom_ids": resolved}
         )
@@ -576,6 +722,7 @@ def sanitize_slide_plan(plan: SlidePlan, kb: KnowledgeBase) -> SlidePlan:
             logger.info("SlidePlan: slide redundante descartada: '%s'", repaired.title)
             continue
         cleaned.append(repaired)
+        used.update(resolved)
         if intro_like:
             has_intro = True
 

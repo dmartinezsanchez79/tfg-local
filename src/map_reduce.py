@@ -192,14 +192,40 @@ _MD_H1_RE = re.compile(r"(?m)^#\s+(.+?)\s*$")
 _MD_H2_RE = re.compile(r"(?m)^##\s+(.+?)\s*$")
 _MD_H3_RE = re.compile(r"(?m)^###\s+(.+?)\s*$")
 
+# Encabezados que NO sirven como tema central (típicamente secciones
+# numeradas tipo "1. Introducción" o títulos administrativos como
+# "Resumen", "Índice"). Si el primer H1 cae aquí, buscamos otro.
+_GENERIC_HEADING_RE = re.compile(
+    r"^(?:\d+[\.\)]?\s+)?"
+    r"(?:introduccion|introducción|resumen|abstract|indice|índice|"
+    r"contenido|tabla\s+de\s+contenidos|prefacio|prologo|prólogo|"
+    r"agradecimientos|capitulo|capítulo|tema|leccion|lección)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_meaningful_heading(text: str) -> bool:
+    """True si el encabezado parece tema real (no "1. Introducción" etc.)."""
+    t = (text or "").strip()
+    if not (2 <= len(t) <= 200):
+        return False
+    return not _GENERIC_HEADING_RE.match(t)
+
 
 def _infer_main_topic(markdown: str, hints: LiteralHints) -> str:
-    """Heurística robusta para adivinar el tema central del documento."""
-    m = _MD_H1_RE.search(markdown or "")
-    if m:
+    """Heurística robusta para adivinar el tema central del documento.
+
+    Prefiere un H1 con contenido sustantivo (no "1. Introducción"). Si
+    todos los H1 son genéricos, prueba con H2 y finalmente con key_terms.
+    """
+    for m in _MD_H1_RE.finditer(markdown or ""):
         candidate = m.group(1).strip()
-        if 2 <= len(candidate) <= 200:
-            return candidate
+        if _is_meaningful_heading(candidate):
+            return candidate[:200]
+    for m in _MD_H2_RE.finditer(markdown or ""):
+        candidate = m.group(1).strip()
+        if _is_meaningful_heading(candidate):
+            return candidate[:200]
     if hints.key_terms:
         return hints.key_terms[0][:200]
     return "Documento"
@@ -507,6 +533,83 @@ def _prune_ungrounded_relations(
     return kb
 
 
+def _enrich_kb_with_literal_hints(
+    kb: KnowledgeBase, hints: LiteralHints, markdown: str
+) -> KnowledgeBase:
+    """Fusiona en la KB las definiciones y bloques de código literales que
+    el LLM se haya saltado.
+
+    No sobrescribe nada de lo que el LLM produjo: solo añade lo que falta.
+    Las definiciones se reconocen por término normalizado (sin acentos,
+    minúsculas) para evitar duplicados con distinto formato.
+
+    Es una red de seguridad para modelos pequeños: aunque el LLM devuelva
+    una KB pobre, siempre tendremos al menos las N definiciones literales
+    que extrajimos determinísticamente del PDF.
+    """
+    if hints.is_empty:
+        return kb
+
+    existing_def_keys = {
+        _normalize_entity(d.term) for d in kb.definitions if d.term
+    }
+    used_ids = {a.id for a in kb._iter_atoms()}  # noqa: SLF001
+    new_defs: list[Definition] = []
+    for i, hint in enumerate(hints.definitions):
+        term = (hint.term or "").strip()
+        defn = (hint.definition or "").strip()
+        key = _normalize_entity(term)
+        if not key or key in existing_def_keys:
+            continue
+        base_id = slugify_id("def", term) or f"def:hint_{i}"
+        atom_id, suffix = base_id, 2
+        while atom_id in used_ids:
+            atom_id = f"{base_id}_{suffix}"
+            suffix += 1
+        try:
+            new_defs.append(Definition(
+                id=atom_id, term=term[:120], definition=defn[:600], verbatim=True,
+            ))
+            used_ids.add(atom_id)
+            existing_def_keys.add(key)
+        except ValidationError as exc:
+            logger.debug("Anclaje KB: definición '%s' descartada (%s)", term, exc)
+
+    existing_code_contents = {
+        " ".join(fc.content.split())[:200] for fc in kb.formulas_code
+    }
+    new_codes: list[FormulaOrCode] = []
+    for i, code in enumerate(hints.code_blocks):
+        body = (code.content or "").strip()
+        sig = " ".join(body.split())[:200]
+        if not sig or sig in existing_code_contents:
+            continue
+        atom_id, suffix = f"fc:hint_code_{i + 1}", 2
+        while atom_id in used_ids:
+            atom_id = f"fc:hint_code_{i + 1}_{suffix}"
+            suffix += 1
+        try:
+            new_codes.append(FormulaOrCode(
+                id=atom_id, kind="code", content=body[:2000], language=code.language,
+            ))
+            used_ids.add(atom_id)
+            existing_code_contents.add(sig)
+        except ValidationError as exc:
+            logger.debug("Anclaje KB: bloque de código descartado (%s)", exc)
+
+    if not new_defs and not new_codes:
+        return kb
+
+    logger.info(
+        "Anclaje KB: añadidas %d definiciones literales y %d bloques de código.",
+        len(new_defs), len(new_codes),
+    )
+    return kb.model_copy(update={
+        "definitions": kb.definitions + new_defs,
+        "formulas_code": kb.formulas_code + new_codes,
+    })
+
+
 def _reduce_to_kb(
     client: OllamaClient,
     partials: list[str],
@@ -576,6 +679,12 @@ def _reduce_to_kb(
     # Se filtran también atributos/métodos concretos de los Examples.
     kb = _prune_ungrounded_relations(kb, source_markdown)
     kb = _prune_ungrounded_examples(kb, source_markdown)
+
+    # Anclaje literal: SIEMPRE fusionamos las definiciones y bloques de
+    # código extraídos heurísticamente del PDF que el LLM se haya saltado.
+    # Esto garantiza un suelo mínimo de átomos verificables incluso cuando
+    # el LLM produce una KB pobre, sin sobre-escribir lo que sí extrajo.
+    kb = _enrich_kb_with_literal_hints(kb, literal_hints, source_markdown)
 
     logger.info(
         "KB construida: topic='%s', %d subtopics, %d átomos "

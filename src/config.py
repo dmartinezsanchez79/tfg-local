@@ -16,8 +16,6 @@ AVAILABLE_MODELS: Final[tuple[str, ...]] = (
     "qwen2.5:7b",
     "gemma2:9b",
     "gemma3:4b",
-    "mistral:7b",
-    "llama3.2:3b",
 )
 DEFAULT_MODEL: Final[str] = "qwen2.5:14b"
 

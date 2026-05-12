@@ -96,8 +96,15 @@ class OllamaClient:
         system: str | None = None,
         json_mode: bool = False,
         temperature: float | None = None,
+        schema: dict[str, Any] | None = None,
     ) -> str:
-        """Genera una respuesta del modelo. Si json_mode=True fuerza salida JSON."""
+        """Genera una respuesta del modelo.
+
+        - `json_mode=True`     → fuerza salida JSON libre.
+        - `schema=<dict>`      → fuerza salida JSON conforme a ese JSON Schema
+          (modo "structured outputs" de Ollama, mucho más fiable en modelos
+          pequeños). Implica `json_mode`.
+        """
         options: dict[str, Any] = {
             "temperature": self.temperature if temperature is None else temperature,
             "num_ctx": self.num_ctx,
@@ -110,7 +117,9 @@ class OllamaClient:
         }
         if system:
             kwargs["system"] = system
-        if json_mode:
+        if schema is not None:
+            kwargs["format"] = schema
+        elif json_mode:
             kwargs["format"] = "json"
 
         try:
@@ -137,10 +146,14 @@ class OllamaClient:
         *,
         system: str | None = None,
         temperature: float | None = None,
+        schema: dict[str, Any] | None = None,
     ) -> Any:
-        """Genera JSON y lo parsea. Aplica una limpieza defensiva de code fences."""
+        """Genera JSON y lo parsea. Si `schema` se pasa, Ollama fuerza la salida
+        a cumplir ese JSON Schema (structured outputs).
+        """
         raw = self.generate(
-            prompt, system=system, json_mode=True, temperature=temperature
+            prompt, system=system, json_mode=True,
+            temperature=temperature, schema=schema,
         )
         return _parse_json_loose(raw)
 

@@ -17,7 +17,9 @@ from pathlib import Path
 from typing import Any
 
 from pptx import Presentation
-from pptx.util import Pt
+from pptx.oxml.ns import qn
+from pptx.oxml.xmlchemy import OxmlElement
+from pptx.util import Inches, Pt
 from pydantic import BaseModel, Field, ValidationError
 
 from .config import (
@@ -30,7 +32,13 @@ from .config import (
     MAX_CHARS_SLIDE_TITLE,
     TEMPLATE_PATH,
 )
-from .exceptions import GenerationError, TemplateError
+from .exceptions import (
+    GenerationError,
+    OllamaError,
+    OllamaModelNotFoundError,
+    OllamaUnavailableError,
+    TemplateError,
+)
 from .knowledge_base import (
     Definition,
     Example,
@@ -44,6 +52,7 @@ from .map_reduce import ProgressCallback
 from .ollama_client import OllamaClient
 from .plans import (
     PlannedSlide,
+    SLIDE_PLAN_JSON_SCHEMA,
     SlidePlan,
     build_fallback_slide_plan,
     coerce_slide_plan_payload,
@@ -63,6 +72,22 @@ logger = logging.getLogger(__name__)
 
 class SlideBullets(BaseModel):
     bullets: list[str] = Field(min_length=1, max_length=MAX_BULLETS_PER_SLIDE + 2)
+
+
+# JSON Schema plano para Ollama: garantiza que la respuesta de bullets sea
+# `{"bullets": [str, ...]}` aunque el modelo sea pequeño.
+SLIDE_BULLETS_JSON_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["bullets"],
+    "properties": {
+        "bullets": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": MAX_BULLETS_PER_SLIDE + 2,
+            "items": {"type": "string", "minLength": 10, "maxLength": MAX_CHARS_PER_BULLET + 40},
+        },
+    },
+}
 
 
 @dataclass
@@ -343,16 +368,32 @@ def _atoms_for_slide(kb: KnowledgeBase, slide: PlannedSlide) -> str:
 
 # --------------------------------------------------- planificación slides --
 
-def plan_slides(client: OllamaClient, kb: KnowledgeBase) -> SlidePlan:
-    """Pide al LLM el `SlidePlan` con 3 capas de resiliencia.
+def _format_valid_ids(kb: KnowledgeBase, *, max_ids: int = 80) -> str:
+    """Lista compacta de IDs válidos por categoría, para inyectar en prompts.
 
-    Coerción defensiva → reintento con temperatura baja → fallback
-    determinístico desde la KB (para modelos pequeños poco cooperativos).
+    Limitamos a `max_ids` para no inflar la ventana de contexto en modelos
+    pequeños. Las KBs realistas raramente superan 60 átomos.
     """
+    ids = kb.atom_ids()[:max_ids]
+    if not ids:
+        return "(sin átomos disponibles)"
+    by_prefix: dict[str, list[str]] = {}
+    for aid in ids:
+        prefix = aid.split(":", 1)[0] if ":" in aid else "other"
+        by_prefix.setdefault(prefix, []).append(aid)
+    lines = [f"- {prefix}: {', '.join(items)}" for prefix, items in by_prefix.items()]
+    return "\n".join(lines)
+
+
+def plan_slides(client: OllamaClient, kb: KnowledgeBase) -> SlidePlan:
+    """Pide al LLM el `SlidePlan` con structured outputs + fallback defensivo."""
     if kb.atom_count == 0:
         raise GenerationError("La KB no contiene átomos; no se puede planificar la presentación.")
 
-    prompt = SLIDE_PLAN_PROMPT.format(kb_context=kb.to_prompt_context(max_chars=6000))
+    prompt = SLIDE_PLAN_PROMPT.format(
+        kb_context=kb.to_prompt_context(max_chars=5000),
+        valid_atom_ids=_format_valid_ids(kb),
+    )
 
     def _try(raw: Any) -> SlidePlan | None:
         data = coerce_slide_plan_payload(raw, kb)
@@ -364,10 +405,16 @@ def plan_slides(client: OllamaClient, kb: KnowledgeBase) -> SlidePlan:
             logger.warning("SlidePlan ValidationError: %s", exc.errors()[:2])
             return None
 
-    plan = _try(client.generate_json(prompt, system=SYSTEM_EXPERT_ES, temperature=0.2))
+    plan = _try(client.generate_json(
+        prompt, system=SYSTEM_EXPERT_ES, temperature=0.2,
+        schema=SLIDE_PLAN_JSON_SCHEMA,
+    ))
     if plan is None:
         logger.warning("SlidePlan inicial inválido; reintentando con temperatura 0.1…")
-        plan = _try(client.generate_json(prompt, system=SYSTEM_EXPERT_ES, temperature=0.1))
+        plan = _try(client.generate_json(
+            prompt, system=SYSTEM_EXPERT_ES, temperature=0.1,
+            schema=SLIDE_PLAN_JSON_SCHEMA,
+        ))
     if plan is None:
         logger.warning("SlidePlan tampoco válido; usando fallback determinístico desde la KB.")
         plan = build_fallback_slide_plan(kb)
@@ -418,7 +465,20 @@ def _render_bullets(
     ningún bullet a la limpieza y `empty_raises=True`, lanza `GenerationError`
     para que el caller decida (regenerar o marcar fallo).
     """
-    raw = client.generate_json(prompt, system=SYSTEM_EXPERT_ES, temperature=temperature)
+    try:
+        raw = client.generate_json(
+            prompt, system=SYSTEM_EXPERT_ES, temperature=temperature,
+            schema=SLIDE_BULLETS_JSON_SCHEMA,
+        )
+    except (OllamaUnavailableError, OllamaModelNotFoundError):
+        raise
+    except OllamaError as exc:
+        # Modelos pequeños a veces ignoran el schema y devuelven texto plano
+        # (sobre todo cuando la slide contiene fragmentos de código). Lo
+        # convertimos en GenerationError para que el caller pueda usar fallback.
+        raise GenerationError(
+            f"LLM devolvió respuesta no-JSON para '{slide_title}': {exc}"
+        ) from exc
     if not isinstance(raw, dict):
         raise GenerationError(f"Bullets inválidos para '{slide_title}' (no es JSON objeto).")
     try:
@@ -436,6 +496,54 @@ def _render_bullets(
             f"Todos los bullets descartados por calidad en slide '{slide_title}'."
         )
     return out[:MAX_BULLETS_PER_SLIDE]
+
+
+def _fallback_bullets_from_atoms(kb: KnowledgeBase, slide: PlannedSlide) -> list[str]:
+    """Construye 3-4 bullets razonables desde los átomos asignados, sin LLM.
+
+    Se usa cuando el LLM falla (devuelve texto plano, JSON inválido o todos
+    los bullets descartados por calidad). Garantiza que la slide nunca quede
+    completamente vacía cuando hay átomos disponibles.
+    """
+    def _close(text: str) -> str:
+        text = text.strip().rstrip(",;:·")
+        return text if text.endswith((".", "?", "!")) else text + "."
+
+    bullets: list[str] = []
+    for aid in slide.atom_ids[:4]:
+        atom = kb.get_atom(aid)
+        if atom is None:
+            continue
+        if isinstance(atom, Definition):
+            bullets.append(_close(f"{atom.term}: {atom.definition}"))
+        elif isinstance(atom, Example):
+            attrs = ", ".join(atom.attributes[:3])
+            extra = f" (atributos: {attrs})" if attrs else ""
+            bullets.append(_close(f"{atom.name}: {atom.description}{extra}"))
+        elif isinstance(atom, Relation):
+            bullets.append(_close(relation_to_natural(atom).capitalize()))
+        elif isinstance(atom, NumericDatum):
+            bullets.append(_close(f"{atom.value}: {atom.description}"))
+        elif isinstance(atom, FormulaOrCode):
+            caption = atom.caption or ("Fragmento de código" if atom.kind == "code" else "Fórmula")
+            bullets.append(_close(f"{caption}: ver fragmento técnico en el material"))
+    # Sin `slide_title`: el anti-eco descarta frases que empiezan como el título
+    # de la slide (muy frecuente en slides de código: el término = título).
+    cleaned = [c for b in bullets if (c := _clean_bullet(b, MAX_CHARS_PER_BULLET, slide_title=None))]
+    out = _balance_bullet_density(cleaned)
+    if out:
+        return out
+    # Último recurso: bullets genéricos anclados al documento (nunca vacíos).
+    topic = (kb.main_topic or "el documento").strip()
+    emergency = [
+        _close(f"Esta diapositiva sintetiza «{slide.title}» en el marco de {topic}."),
+        _close(f"Los conceptos clave aparecen desarrollados en el material fuente sobre {topic}."),
+        _close("Los detalles técnicos concretos se apoyan en los fragmentos citados en la base de conocimiento."),
+    ]
+    return [
+        c for b in emergency
+        if (c := _clean_bullet(b, MAX_CHARS_PER_BULLET, slide_title=None))
+    ][:MAX_BULLETS_PER_SLIDE]
 
 
 def render_slide_bullets(
@@ -459,10 +567,15 @@ def render_slide_bullets(
             "\n".join(f"- {b}" for b in prior_bullets[-8:]) if prior_bullets else "(sin contenido previo)"
         ),
     )
-    first = _dedupe_bullets(
-        _render_bullets(client, prompt, slide_title=slide.title, temperature=0.3),
-        prior_bullets,
-    )
+    try:
+        first = _dedupe_bullets(
+            _render_bullets(client, prompt, slide_title=slide.title, temperature=0.3),
+            prior_bullets,
+        )
+    except GenerationError as exc:
+        logger.warning("Bullets LLM falló para '%s' (%s); usando fallback desde átomos.",
+                       slide.title, exc)
+        return _fallback_bullets_from_atoms(kb, slide)
     if len(first) >= 3:
         return first
 
@@ -473,13 +586,20 @@ def render_slide_bullets(
           "- No repitas ideas ya cubiertas en el contenido previo.\n"
           "- Si no cabe una frase completa, omítela.\n"
     )
-    retry = _dedupe_bullets(
-        _render_bullets(
-            client, retry_prompt, slide_title=slide.title, temperature=0.2, empty_raises=False
-        ),
-        prior_bullets,
-    )
-    return retry if retry else first
+    try:
+        retry = _dedupe_bullets(
+            _render_bullets(
+                client, retry_prompt, slide_title=slide.title, temperature=0.2, empty_raises=False
+            ),
+            prior_bullets,
+        )
+    except GenerationError:
+        retry = []
+    if retry:
+        return retry
+    if first:
+        return first
+    return _fallback_bullets_from_atoms(kb, slide)
 
 
 def _render_conclusion(
@@ -612,6 +732,117 @@ def _set_bullets(shape: Any, bullets: list[str]) -> None:
                 run.font.size = Pt(20)
 
 
+# Propiedades de viñeta/numeración en DrawingML (p.árr. <a:pPr>).
+_BULLET_PPR_TAGS: frozenset[str] = frozenset({
+    qn("a:buNone"), qn("a:buChar"), qn("a:buAutoNum"), qn("a:buFont"),
+    qn("a:buClrTx"), qn("a:buClr"), qn("a:buSzTx"), qn("a:buSzPct"),
+    qn("a:buBlip"), qn("a:buPicture"),
+})
+
+
+def _paragraph_force_disc_bullet(paragraph: Any) -> None:
+    """Quita numeración del tema y fuerza viñeta «•» en este párrafo.
+
+    Evita el caso típico de plantilla: 1.er ítem numerado, resto con viñeta.
+    """
+    p_pr = paragraph._element.get_or_add_pPr()
+    for child in list(p_pr):
+        if child.tag in _BULLET_PPR_TAGS:
+            p_pr.remove(child)
+    bu = OxmlElement("a:buChar")
+    bu.set("char", "•")
+    p_pr.append(bu)
+
+
+def _strip_paragraph_def_rpr(paragraph: Any) -> None:
+    """Elimina `a:defRPr` del párrafo (fuente/viñeta por defecto del tema).
+
+    El primer párrafo del placeholder suele conservar un `defRPr` distinto
+    (texto más grande, subrayado, otra viñeta); quitarlo unifica el índice.
+    """
+    p_pr = paragraph._element.get_or_add_pPr()
+    for child in list(p_pr):
+        if child.tag == qn("a:defRPr"):
+            p_pr.remove(child)
+    # Mismo nivel de lista que el resto de ítems del cuerpo.
+    p_pr.set("lvl", "0")
+
+
+def _index_body_font_pt(num_items: int, *, avg_title_chars: float = 0.0) -> float:
+    """Tamaño de fuente del cuerpo del índice: baja con muchas entradas o títulos largos."""
+    n = max(1, num_items)
+    if n <= 8:
+        pt = 20.0
+    else:
+        pt = 20.0 - (n - 8) * 0.75
+    pt = max(9.0, pt)
+    # Títulos largos generan más líneas al ajustar; bajar un poco extra.
+    if avg_title_chars > 52:
+        pt = max(9.0, pt - 1.5)
+    if avg_title_chars > 72:
+        pt = max(9.0, pt - 1.5)
+    return pt
+
+
+def _set_index_bullets(shape: Any, titles: list[str]) -> None:
+    """Índice: solo títulos, todos con viñeta «•», sin «1.» en el texto; fuente adaptativa."""
+    if shape is None or not shape.has_text_frame:
+        return
+    lines = [" ".join((t or "").split()).strip() for t in titles]
+    lines = [t for t in lines if t]
+    if not lines:
+        return
+
+    tf = shape.text_frame
+    tf.clear()
+    tf.word_wrap = True
+    try:
+        tf.auto_size = 1  # TEXT_TO_FIT_SHAPE
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        tf.margin_left = Inches(0.08)
+        tf.margin_right = Inches(0.08)
+        tf.margin_top = Inches(0.06)
+        tf.margin_bottom = Inches(0.06)
+    except Exception:  # noqa: BLE001
+        pass
+
+    avg_len = sum(len(x) for x in lines) / len(lines)
+    font_pt = _index_body_font_pt(len(lines), avg_title_chars=avg_len)
+
+    # No reutilizar `paragraphs[0]` tras `clear()`: el placeholder deja un
+    # <a:p> con defRPr propio (fuente/viñeta/sangría distintos al resto).
+    # Borramos todos los <a:p> y creamos cada línea con `add_paragraph()`.
+    tx_body = tf._element
+    for p_el in list(tx_body.findall(qn("a:p"))):
+        tx_body.remove(p_el)
+
+    for line in lines:
+        p = tf.add_paragraph()
+        p.text = line
+        p.level = 0
+        _paragraph_force_disc_bullet(p)
+        _strip_paragraph_def_rpr(p)
+        for run in p.runs:
+            run.font.size = Pt(font_pt)
+            try:
+                run.font.underline = False
+            except Exception:  # noqa: BLE001
+                pass
+
+
+def _overwrite_template_index_slide(slide: Any, title: str, titles: list[str]) -> bool:
+    """Rellena slide precargada (título + cuerpo) para el índice."""
+    title_ph = slide.shapes.title
+    body_ph = _find_placeholder(slide, (1, 2, 13, 14))
+    if title_ph is None or body_ph is None:
+        return False
+    _set_title(title_ph, title)
+    _set_index_bullets(body_ph, titles)
+    return True
+
+
 def _find_placeholder(slide: Any, idx_candidates: tuple[int, ...]) -> Any | None:
     by_idx: dict[int, Any] = {p.placeholder_format.idx: p for p in slide.placeholders}
     for idx in idx_candidates:
@@ -640,6 +871,18 @@ def _add_content_slide(prs: Any, title: str, bullets: list[str]) -> None:
     if body is None:
         raise TemplateError("El layout de contenido no tiene un placeholder para el cuerpo.")
     _set_bullets(body, bullets)
+
+
+def _add_index_slide(prs: Any, title: str, titles: list[str]) -> None:
+    """Añade slide de índice con viñetas unificadas y fuente adaptativa."""
+    if LAYOUT_CONTENT >= len(prs.slide_layouts):
+        raise TemplateError(f"La plantilla no tiene el layout {LAYOUT_CONTENT} (Contenido).")
+    slide = prs.slides.add_slide(prs.slide_layouts[LAYOUT_CONTENT])
+    _set_title(slide.shapes.title, title)
+    body = _find_placeholder(slide, (1, 2, 13, 14))
+    if body is None:
+        raise TemplateError("El layout de contenido no tiene un placeholder para el cuerpo.")
+    _set_index_bullets(body, titles)
 
 
 def _load_template() -> Any:
@@ -718,8 +961,8 @@ def render_pptx(plan: PresentationPlan, output_path: Path | None = None) -> byte
     for omitted in (s for s in plan.slides if not s.bullets):
         logger.warning("Slide '%s' sin bullets; se omite en el PPTX.", omitted.title)
 
-    index_bullets = [f"{i}. {s.title}" for i, s in enumerate(slides_ok, start=1)
-                     ][: MAX_BULLETS_PER_SLIDE * 2]
+    # Índice: todos los títulos de contenido, sin numeración en el texto (solo viñetas).
+    index_titles = [s.title for s in slides_ok]
     preloaded = list(prs.slides)
 
     if preloaded:
@@ -730,11 +973,11 @@ def render_pptx(plan: PresentationPlan, output_path: Path | None = None) -> byte
 
     index_written = False
     if len(preloaded) >= 2:
-        index_written = _overwrite_template_body_slide(preloaded[1], "Índice", index_bullets)
+        index_written = _overwrite_template_index_slide(preloaded[1], "Índice", index_titles)
         if not index_written:
             logger.warning("Slide 2 de plantilla sin TITLE+BODY; índice como slide nueva.")
     if not index_written:
-        _add_content_slide(prs, "Índice", index_bullets)
+        _add_index_slide(prs, "Índice", index_titles)
 
     for slide in slides_ok:
         _add_content_slide(prs, slide.title, slide.bullets)

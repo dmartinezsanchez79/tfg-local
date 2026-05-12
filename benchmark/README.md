@@ -84,9 +84,9 @@ Reports agregados en `benchmark/reports/`:
   por clave (`pdf_id`, `model`):
   - si ejecutas una combinación nueva, añade fila;
   - si repites el mismo `pdf_id` y el mismo `model`, reemplaza su fila.
-  Incluye además trazas de longitud del documento (`pdf_num_chars_catalog`,
-  `pdf_num_chars_extracted`, `pdf_truncated`). Es el fichero principal
-  para análisis.
+  Incluye metadatos del catálogo (`pdf_length_category`, `pdf_has_images`,
+  `pdf_has_tables`) y el resto de columnas planas del resumen. Es el
+  fichero principal para análisis.
 * `model_averages.csv` — media por modelo de las métricas numéricas,
   calculada sobre todo el histórico `status=ok`.
 * `manual_evaluation_template.csv` — plantilla para puntuar a mano una
@@ -98,10 +98,10 @@ Reports agregados en `benchmark/reports/`:
 
 El benchmark se apoya en tres capas de evaluación, **complementarias**:
 
-1. **Automática** — `metrics.py`. Recuentos y solapamientos simples.
-   Objetivos: detectar fallos duros (quiz vacío, bullets cortados,
-   repetición entre slides, opciones desbalanceadas). Definida por un
-   `score_quiz` y `score_pptx` en `[0, 1]` con pesos documentados.
+1. **Automática** — `metrics.py`. Recuentos y solapamientos simples
+   (Bloom, duplicados en quiz, bullets por slide, coherencia índice–slides,
+   etc.). **No** incluye puntuación agregada: la nota final es manual /
+   IA externa con la rúbrica 1–5.
 
 2. **Semiautomática (IA externa)** — `judge_prompts.py`. Cada ejecución
    produce dos `.txt` listos para pegar en ChatGPT / Gemini adjuntando
@@ -123,11 +123,8 @@ El benchmark se apoya en tres capas de evaluación, **complementarias**:
 | `bloom_distribution`         | Cuenta por nivel Bloom declarado                       |
 | `bloom_diversity`            | Nº de niveles Bloom distintos cubiertos                |
 | `duplicate_pairs`            | Pares de preguntas con stems muy similares (Jaccard)   |
-| `unbalanced_options_count`   | Preguntas cuyo `max/min` de longitudes de opciones es ≥ 2.2 |
-| `banned_phrases_count`       | Apariciones de "todas las anteriores", etc.            |
 | `pct_with_explanation`       | Fracción con justificación útil (≥10 chars)            |
 | `kb_term_coverage`           | Fracción de términos clave de la KB mencionados en el quiz |
-| `score_quiz`                 | Media ponderada 0..1 (ver `rubric_reference.txt`)      |
 
 ### PPTX
 
@@ -136,11 +133,11 @@ El benchmark se apoya en tres capas de evaluación, **complementarias**:
 | `num_slides_total`            | Portada + índice + contenido + conclusión                |
 | `num_content_slides`          | Diapositivas de desarrollo con bullets                   |
 | `avg_bullets_per_slide`       | Media de bullets por slide de contenido                  |
-| `bullets_too_long/short`      | Bullets fuera del rango razonable                        |
-| `bullets_possibly_truncated`  | Bullets que no cierran en puntuación natural             |
-| `cross_slide_repetition_pairs`| Pares de bullets muy parecidos entre slides distintas    |
+| `slides_with_few_bullets`     | Slides con menos de 3 bullets                            |
+| `slides_with_many_bullets`    | Slides con más de 5 bullets                              |
+| `bullets_total`               | Total de bullets en slides de contenido                  |
 | `index_coherence`             | Fracción de títulos del índice que aparecen en slides    |
-| `score_pptx`                  | Media ponderada 0..1                                     |
+| `has_conclusion`              | Si el plan incluye bloque de conclusión                  |
 
 > Todas las métricas son deliberadamente simples. No pretenden
 > sustituir al juicio humano ni a la evaluación por IA externa, pero
@@ -188,9 +185,9 @@ una de las dos carpetas. No hace falta tocar código.
 
 ## 9. Limitaciones conocidas
 
-* Las métricas automáticas son heurísticas: un `score_quiz` alto no
-  garantiza calidad pedagógica, solo ausencia de patologías obvias. De
-  ahí la necesidad de la capa de IA externa y el muestreo manual.
+* Las métricas automáticas son heurísticas: no sustituyen la puntuación
+  con rúbrica 1–5 (manual o IA externa). De ahí la capa semiautomática
+  y el muestreo manual.
 * La métrica de cobertura (`kb_term_coverage`) es por solapamiento
   léxico, no semántico. Puede infravalorar quizzes con buena
   paráfrasis.

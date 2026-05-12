@@ -3,7 +3,7 @@
 Uso típico (desde la raíz del proyecto):
 
     python -m benchmark.runner
-    python -m benchmark.runner --models qwen2.5:7b mistral:7b
+    python -m benchmark.runner --models qwen2.5:7b gemma2:9b
     python -m benchmark.runner --pdfs poo bbdd --only-pptx
     python -m benchmark.runner --dry-run            # lista las ejecuciones
 
@@ -143,7 +143,6 @@ def run_single(
     # Imports diferidos: así `python -m benchmark.runner --help` no exige
     # que Ollama/pymupdf/etc. estén instalados.
     from src.map_reduce import build_knowledge_base
-    from src.config import MAX_INPUT_CHARS
     from src.ollama_client import OllamaClient
     from src.pdf_processor import process_pdf
     from src.pptx_generator import generate_presentation
@@ -161,7 +160,9 @@ def run_single(
         "error": "",
         "timings": timings,
         "pdf_info": {
-            "catalog_num_chars": pdf.meta.get("num_chars"),
+            "length_category": str(pdf.meta.get("length_category") or "").strip(),
+            "has_images": bool(pdf.meta.get("has_images")),
+            "has_tables": bool(pdf.meta.get("has_tables")),
         },
         "kb_info": {},
         "quiz_metrics": None,
@@ -174,12 +175,6 @@ def run_single(
         # 1) PDF → Markdown
         logger.info("[%s × %s] procesando PDF…", pdf.id, model)
         processed = process_pdf(pdf.path.read_bytes())
-        record["pdf_info"].update({
-            "extracted_num_chars": processed.num_chars,
-            "truncated": processed.num_chars >= MAX_INPUT_CHARS,
-            "num_images": processed.num_images,
-            "has_tables_detected": processed.has_tables,
-        })
 
         # 2) Ollama preflight
         client = OllamaClient(model=model)
@@ -364,11 +359,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"\n--- {pdf.id} × {model} ---")
             record = run_single(pdf, model, do_quiz=do_quiz, do_pptx=do_pptx)
             records.append(record)
+            qm = record.get("quiz_metrics") or {}
+            pm = record.get("pptx_metrics") or {}
             print(
                 f"  status={record['status']} "
                 f"total={record['timings'].get('total_s', '-')}s "
-                f"quiz_score={(record.get('quiz_metrics') or {}).get('score_quiz', '-')} "
-                f"pptx_score={(record.get('pptx_metrics') or {}).get('score_pptx', '-')}"
+                f"quiz_q={qm.get('num_questions', '-')} "
+                f"pptx_slides={pm.get('num_slides_total', '-')}"
             )
 
     print("\n=== Generando reportes agregados ===")

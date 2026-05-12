@@ -22,26 +22,22 @@ from typing import Any, Iterable
 from .config import REPORTS_DIR
 from .judge_prompts import PPTX_CRITERIA, QUIZ_CRITERIA, rubric_reference_text
 
-# Columnas "planas" que vuelcan a CSV. El resto (bloom distribution,
-# ejemplos de frases prohibidas, etc.) se deja solo en el JSON completo.
+# Columnas "planas" que vuelcan a CSV. El resto (p. ej. bloom_distribution)
+# se deja solo en el JSON completo.
 _SUMMARY_COLUMNS: tuple[str, ...] = (
     "pdf_id", "pdf_title", "model",
     "status", "error",
-    "pdf_num_chars_catalog", "pdf_num_chars_extracted", "pdf_truncated",
-    "pdf_num_images", "pdf_has_tables_detected",
+    "pdf_length_category", "pdf_has_images", "pdf_has_tables",
     "time_total_s", "time_kb_s", "time_quiz_s", "time_pptx_s",
     "kb_atoms", "kb_subtopics",
     # quiz
     "quiz_num_questions", "quiz_bloom_diversity",
-    "quiz_duplicate_pairs", "quiz_unbalanced_options",
-    "quiz_banned_phrases", "quiz_pct_explanation",
-    "quiz_kb_term_coverage", "quiz_score",
+    "quiz_duplicate_pairs", "quiz_pct_explanation",
+    "quiz_kb_term_coverage",
     # pptx
     "pptx_num_slides_total", "pptx_num_content_slides",
     "pptx_avg_bullets", "pptx_bullets_total",
-    "pptx_bullets_too_long", "pptx_bullets_too_short",
-    "pptx_bullets_truncated", "pptx_cross_slide_repetition",
-    "pptx_index_coherence", "pptx_score",
+    "pptx_index_coherence",
 )
 
 _CSV_DELIMITER = ";"
@@ -62,11 +58,9 @@ def _flatten_record(record: dict[str, Any]) -> dict[str, Any]:
         "model": record.get("model", ""),
         "status": record.get("status", ""),
         "error": (record.get("error") or "").replace("\n", " ")[:300],
-        "pdf_num_chars_catalog": pdf_info.get("catalog_num_chars", ""),
-        "pdf_num_chars_extracted": pdf_info.get("extracted_num_chars", ""),
-        "pdf_truncated": pdf_info.get("truncated", ""),
-        "pdf_num_images": pdf_info.get("num_images", ""),
-        "pdf_has_tables_detected": pdf_info.get("has_tables_detected", ""),
+        "pdf_length_category": pdf_info.get("length_category", ""),
+        "pdf_has_images": pdf_info.get("has_images", ""),
+        "pdf_has_tables": pdf_info.get("has_tables", ""),
         "time_total_s": timings.get("total_s", ""),
         "time_kb_s": timings.get("kb_s", ""),
         "time_quiz_s": timings.get("quiz_s", ""),
@@ -77,22 +71,14 @@ def _flatten_record(record: dict[str, Any]) -> dict[str, Any]:
         "quiz_num_questions": quiz.get("num_questions", ""),
         "quiz_bloom_diversity": quiz.get("bloom_diversity", ""),
         "quiz_duplicate_pairs": quiz.get("duplicate_pairs", ""),
-        "quiz_unbalanced_options": quiz.get("unbalanced_options_count", ""),
-        "quiz_banned_phrases": quiz.get("banned_phrases_count", ""),
         "quiz_pct_explanation": quiz.get("pct_with_explanation", ""),
         "quiz_kb_term_coverage": quiz.get("kb_term_coverage", ""),
-        "quiz_score": quiz.get("score_quiz", ""),
         # pptx
         "pptx_num_slides_total": pptx.get("num_slides_total", ""),
         "pptx_num_content_slides": pptx.get("num_content_slides", ""),
         "pptx_avg_bullets": pptx.get("avg_bullets_per_slide", ""),
         "pptx_bullets_total": pptx.get("bullets_total", ""),
-        "pptx_bullets_too_long": pptx.get("bullets_too_long", ""),
-        "pptx_bullets_too_short": pptx.get("bullets_too_short", ""),
-        "pptx_bullets_truncated": pptx.get("bullets_possibly_truncated", ""),
-        "pptx_cross_slide_repetition": pptx.get("cross_slide_repetition_pairs", ""),
         "pptx_index_coherence": pptx.get("index_coherence", ""),
-        "pptx_score": pptx.get("score_pptx", ""),
     }
 
 
@@ -127,24 +113,27 @@ def write_summary_csv(records: Iterable[dict[str, Any]], out_path: Path | None =
 # --- medias por modelo ----------------------------------------------------
 
 _NUMERIC_AVG_COLUMNS: tuple[str, ...] = (
-    "pdf_num_chars_catalog", "pdf_num_chars_extracted",
+    "pdf_has_images", "pdf_has_tables",
     "time_total_s", "time_kb_s", "time_quiz_s", "time_pptx_s",
+    "kb_atoms", "kb_subtopics",
     "quiz_num_questions", "quiz_bloom_diversity",
-    "quiz_duplicate_pairs", "quiz_unbalanced_options",
-    "quiz_banned_phrases", "quiz_pct_explanation",
-    "quiz_kb_term_coverage", "quiz_score",
-    "pptx_num_content_slides", "pptx_avg_bullets",
-    "pptx_bullets_total", "pptx_bullets_too_long",
-    "pptx_bullets_too_short", "pptx_bullets_truncated",
-    "pptx_cross_slide_repetition", "pptx_index_coherence",
-    "pptx_score",
+    "quiz_duplicate_pairs", "quiz_pct_explanation",
+    "quiz_kb_term_coverage",
+    "pptx_num_slides_total", "pptx_num_content_slides", "pptx_avg_bullets",
+    "pptx_bullets_total", "pptx_index_coherence",
 )
 
 
 def _safe_float(value: Any) -> float | None:
+    if value in (None, "", "nan"):
+        return None
+    if isinstance(value, bool):
+        return 1.0 if value else 0.0
+    if isinstance(value, str):
+        s = value.strip().lower()
+        if s in ("true", "false"):
+            return 1.0 if s == "true" else 0.0
     try:
-        if value in (None, "", "nan"):
-            return None
         return float(value)
     except (TypeError, ValueError):
         return None
@@ -207,8 +196,10 @@ def write_manual_template(
             pdf_id = r.get("pdf_id", "")
             model = r.get("model", "")
             exec_id = f"{pdf_id}__{_sanitize_model(model)}"
-            has_quiz = str(r.get("quiz_score", "")) != ""
-            has_pptx = str(r.get("pptx_score", "")) != ""
+            qn = r.get("quiz_num_questions", "")
+            has_quiz = qn not in (None, "", "nan") and str(qn).strip() != ""
+            ps = r.get("pptx_num_slides_total", "")
+            has_pptx = ps not in (None, "", "nan") and str(ps).strip() != ""
             if has_quiz:
                 for key, _ in QUIZ_CRITERIA:
                     writer.writerow({

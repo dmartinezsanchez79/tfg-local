@@ -23,16 +23,13 @@ REPORTS_DIR: Final[Path] = BENCH_DIR / "reports"
 PROJECT_PDFS_DIR: Final[Path] = BENCH_DIR.parent / "PDF"
 
 # --- Modelos por defecto ---------------------------------------------------
-# Conjunto representativo que cubre distintos tamaños (14B → 3B) y
-# familias (qwen, gemma, mistral, llama). Suficiente para el TFG.
+# Conjunto representativo (qwen + gemma, 14B → 4B).
 DEFAULT_MODELS: Final[tuple[str, ...]] = (
     "qwen2.5:14b",
     "gemma3:12b",
     "qwen2.5:7b",
     "gemma2:9b",
     "gemma3:4b",
-    "mistral:7b",
-    "llama3.2:3b",
 )
 
 # --- Parámetros de ejecución ----------------------------------------------
@@ -52,18 +49,9 @@ REFINE_SLIDES: Final[bool] = True
 # y explicables en la memoria. Cambiarlos es legítimo si se justifica.
 
 QUIZ_DUPLICATE_JACCARD: Final[float] = 0.70      # similitud léxica de stems
-QUIZ_OPTION_LEN_IMBALANCE: Final[float] = 2.2     # ratio max/min de longitud
-QUIZ_BANNED_PHRASES: Final[tuple[str, ...]] = (
-    "todas las anteriores", "ninguna de las anteriores",
-    "todas son correctas", "ninguna es correcta",
-    "a y b", "b y c", "a y c",
-)
 
-PPTX_BULLET_SHORT_CHARS: Final[int] = 25          # bullets demasiado cortos
-PPTX_BULLET_LONG_CHARS: Final[int] = 210          # bullets demasiado largos
 PPTX_MIN_BULLETS_PER_SLIDE: Final[int] = 3
 PPTX_MAX_BULLETS_PER_SLIDE: Final[int] = 5
-PPTX_REPEAT_JACCARD: Final[float] = 0.70          # repetición entre slides
 
 
 def ensure_directories() -> None:

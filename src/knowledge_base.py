@@ -440,6 +440,53 @@ def _ensure_id(atom: dict[str, Any], *, prefix: str, index: int, used: set[str])
     atom["id"] = candidate
 
 
+def _ensure_required_fields(atom: dict[str, Any], prefix: str) -> bool:
+    """Rellena con defaults sensatos los campos requeridos que el LLM olvide.
+
+    Crítico: sin esto, un único Example sin `description` invalida toda la
+    KB del LLM y caemos al fallback determinístico (perdiendo relaciones y
+    el resto de ejemplos válidos). Devuelve `False` si el átomo es
+    irrescatable (sin ningún campo identificativo).
+    """
+    if prefix == "def":
+        term = (atom.get("term") or "").strip() if isinstance(atom.get("term"), str) else ""
+        defn = (atom.get("definition") or "").strip() if isinstance(atom.get("definition"), str) else ""
+        if not term:
+            return False
+        if len(defn) < 5:
+            atom["definition"] = f"{term}: concepto descrito en el documento."
+    elif prefix == "ex":
+        name = (atom.get("name") or "").strip() if isinstance(atom.get("name"), str) else ""
+        desc = (atom.get("description") or "").strip() if isinstance(atom.get("description"), str) else ""
+        if not name:
+            return False
+        if len(desc) < 5:
+            attrs = atom.get("attributes") or []
+            extra = (
+                f" Características: {', '.join(str(a) for a in attrs[:3])}."
+                if isinstance(attrs, list) and attrs else ""
+            )
+            atom["description"] = f"Entidad descrita en el documento.{extra}".strip()
+    elif prefix == "fc":
+        if not (atom.get("content") or "").strip() if isinstance(atom.get("content"), str) else not atom.get("content"):
+            return False
+    elif prefix == "dt":
+        value = atom.get("value")
+        desc = (atom.get("description") or "").strip() if isinstance(atom.get("description"), str) else ""
+        if value is None or str(value).strip() == "":
+            return False
+        if len(desc) < 3:
+            atom["description"] = "Dato numérico extraído del documento."
+    elif prefix == "rel":
+        source = (atom.get("source") or "").strip() if isinstance(atom.get("source"), str) else ""
+        target = (atom.get("target") or "").strip() if isinstance(atom.get("target"), str) else ""
+        if not source or not target:
+            return False
+        if not (atom.get("kind") or "").strip() if isinstance(atom.get("kind"), str) else not atom.get("kind"):
+            atom["kind"] = "related_to"
+    return True
+
+
 def _coerce_atom_list(raw: Any, prefix: str) -> list[dict[str, Any]]:
     """Renombra claves de cada átomo según su prefix y autogenera `id` si falta."""
     if not isinstance(raw, list):
@@ -457,6 +504,8 @@ def _coerce_atom_list(raw: Any, prefix: str) -> list[dict[str, Any]]:
                 norm[canonical] = val
         if not norm:
             continue
+        if not _ensure_required_fields(norm, prefix):
+            continue
         _ensure_id(norm, prefix=prefix, index=idx, used=used)
         out.append(norm)
     return out
@@ -472,6 +521,26 @@ def _infer_fc_kind(content: str) -> str:
     if re.search(r"[=<>]|\b\d+\s*[+\-*/]\s*\d+\b", content):
         return "formula"
     return "code"
+
+
+# El prompt REDUCE incluye `"main_topic": "cadena 2-120"` como placeholder.
+# Modelos pequeños lo copian literal en vez de reemplazarlo. Estos patrones
+# detectan placeholders de schema y los descartan a favor del fallback.
+_PLACEHOLDER_TOPIC_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"^\s*cadena\s+\d", re.IGNORECASE),
+    re.compile(r"^\s*string\s+\d", re.IGNORECASE),
+    re.compile(r"^\s*<.*>\s*$"),
+    re.compile(r"^\s*\.\.\.\s*$"),
+    re.compile(r"^\s*texto\s+aqui", re.IGNORECASE),
+    re.compile(r"^\s*tema\s+del\s+documento\s*$", re.IGNORECASE),
+)
+
+
+def _looks_placeholder_topic(text: str) -> bool:
+    """True si `text` es un placeholder copiado del schema en lugar de un tema real."""
+    if not text:
+        return True
+    return any(p.search(text) for p in _PLACEHOLDER_TOPIC_PATTERNS)
 
 
 def coerce_kb_payload(raw: Any, *, fallback_topic: str | None = None) -> dict[str, Any] | None:
@@ -496,7 +565,7 @@ def coerce_kb_payload(raw: Any, *, fallback_topic: str | None = None) -> dict[st
     out: dict[str, Any] = {}
 
     topic = _pick(raw, _KB_TOPLEVEL_ALIASES["topic"])
-    if isinstance(topic, str) and topic.strip():
+    if isinstance(topic, str) and topic.strip() and not _looks_placeholder_topic(topic):
         out["main_topic"] = topic.strip()[:200]
     elif fallback_topic:
         out["main_topic"] = fallback_topic.strip()[:200]

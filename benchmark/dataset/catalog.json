@@ -1,75 +1,45 @@
 {
-  "description": "Catálogo de PDFs del benchmark. Edita libremente este fichero para añadir o quitar documentos. Los campos has_tables, has_images y domain son informativos; no cambian el comportamiento del pipeline.",
+  "description": "Catálogo activo del benchmark con los 4 PDFs representativos actuales en benchmark/dataset/pdfs. Los campos has_tables, has_images, domain y length_category son metadatos informativos.",
   "pdfs": [
     {
-      "id": "poo",
-      "filename": "ProgOrientadaObjetos.pdf",
-      "title": "Programación Orientada a Objetos",
-      "num_chars": 25464,
-      "has_tables": false,
-      "has_images": true,
-      "domain": "programacion",
-      "length_category": "medio"
-    },
-    {
-      "id": "ia",
-      "filename": "InteligenciaArtificial.pdf",
-      "title": "Inteligencia Artificial",
-      "num_chars": 31140,
+      "id": "energia_renovable",
+      "filename": "EnergiaRenovable.pdf",
+      "title": "Energía Renovable",
+      "num_chars": 19913,
       "has_tables": true,
       "has_images": true,
-      "domain": "ia",
+      "domain": "energia",
       "length_category": "medio"
     },
     {
-      "id": "bbdd",
-      "filename": "BasesDatosDistribuidas.pdf",
-      "title": "Bases de Datos Distribuidas",
-      "num_chars": 39215,
-      "has_tables": true,
-      "has_images": false,
-      "domain": "bbdd",
-      "length_category": "medio"
-    },
-    {
-      "id": "bigdata",
-      "filename": "FundamentosBigData.pdf",
-      "title": "Fundamentos de Big Data",
-      "num_chars": 39663,
+      "id": "cambio_climatico",
+      "filename": "CambioClimatico.pdf",
+      "title": "Cambio Climático",
+      "num_chars": 51998,
       "has_tables": true,
       "has_images": true,
-      "domain": "datos",
-      "length_category": "medio"
-    },
-    {
-      "id": "pln",
-      "filename": "ProcesamientoLenguajeNatural.pdf",
-      "title": "Procesamiento de Lenguaje Natural",
-      "num_chars": 38548,
-      "has_tables": false,
-      "has_images": true,
-      "domain": "ia",
-      "length_category": "medio"
-    },
-    {
-      "id": "teoria_educacion",
-      "filename": "teoria-educacion.pdf",
-      "title": "Teoría de la educación",
-      "num_chars": 86700,
-      "has_tables": false,
-      "has_images": true,
-      "domain": "educacion",
+      "domain": "medioambiente",
       "length_category": "alto"
     },
     {
-      "id": "enfermeria_cuidados",
-      "filename": "Gestion-cuidados-enfermeria.pdf",
-      "title": "Gestión de cuidados en enfermería",
-      "num_chars": 54433,
+      "id": "sistemas_salud_publica",
+      "filename": "SistemasSaludPublica.pdf",
+      "title": "Sistemas de Salud Pública",
+      "num_chars": 27854,
       "has_tables": true,
       "has_images": true,
       "domain": "salud",
-      "length_category": "alto"
+      "length_category": "medio"
+    },
+    {
+      "id": "futbol",
+      "filename": "Futbol.pdf",
+      "title": "Fútbol",
+      "num_chars": 13740,
+      "has_tables": true,
+      "has_images": false,
+      "domain": "deporte",
+      "length_category": "bajo"
     }
   ]
 }

@@ -37,6 +37,7 @@ from .ollama_client import OllamaClient
 from .plans import (
     BLOOM_RECOMMENDED_KINDS,
     PlannedQuestion,
+    QUIZ_PLAN_JSON_SCHEMA,
     QuizPlan,
     build_fallback_quiz_plan,
     coerce_quiz_plan_payload,
@@ -117,6 +118,34 @@ class Quiz(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         return self.model_dump()
+
+
+# JSON Schema plano que se pasa a Ollama para forzar la salida de UNA
+# pregunta. Reduce drásticamente los `JSONDecodeError` y los campos
+# incompletos en modelos pequeños.
+QUIZ_QUESTION_JSON_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["question", "options", "correct_answer", "justification"],
+    "properties": {
+        "bloom_level": {
+            "type": "string",
+            "enum": ["recordar", "comprender", "aplicar", "analizar", "evaluar", "crear"],
+        },
+        "question": {"type": "string", "minLength": 10, "maxLength": 320},
+        "options": {
+            "type": "object",
+            "required": ["A", "B", "C", "D"],
+            "properties": {
+                "A": {"type": "string", "minLength": 1, "maxLength": 240},
+                "B": {"type": "string", "minLength": 1, "maxLength": 240},
+                "C": {"type": "string", "minLength": 1, "maxLength": 240},
+                "D": {"type": "string", "minLength": 1, "maxLength": 240},
+            },
+        },
+        "correct_answer": {"type": "string", "enum": ["A", "B", "C", "D"]},
+        "justification": {"type": "string", "minLength": 10, "maxLength": 400},
+    },
+}
 
 
 # =========================================================================
@@ -256,15 +285,29 @@ def _previous_summary(questions: list[QuizQuestion], *, limit: int = 5) -> str:
 # Planificación del quiz
 # =========================================================================
 
+def _format_valid_ids(kb: KnowledgeBase, *, max_ids: int = 80) -> str:
+    """Lista de IDs válidos por categoría para inyectar en el QuizPlan prompt."""
+    ids = kb.atom_ids()[:max_ids]
+    if not ids:
+        return "(sin átomos disponibles)"
+    by_prefix: dict[str, list[str]] = {}
+    for aid in ids:
+        prefix = aid.split(":", 1)[0] if ":" in aid else "other"
+        by_prefix.setdefault(prefix, []).append(aid)
+    lines = [f"- {prefix}: {', '.join(items)}" for prefix, items in by_prefix.items()]
+    return "\n".join(lines)
+
+
 def plan_quiz(client: OllamaClient, kb: KnowledgeBase, num_questions: int) -> QuizPlan:
-    """Pide al LLM el `QuizPlan` con coerción defensiva + fallback determinístico."""
+    """Pide al LLM el `QuizPlan` con structured outputs + fallback defensivo."""
     if kb.atom_count == 0:
         raise GenerationError("La KB no contiene átomos; no se puede planificar quiz.")
 
     n = max(1, min(num_questions, MAX_NUM_QUESTIONS))
     prompt = QUIZ_PLAN_PROMPT.format(
         num_questions=n,
-        kb_context=kb.to_prompt_context(max_chars=6000),
+        kb_context=kb.to_prompt_context(max_chars=5000),
+        valid_atom_ids=_format_valid_ids(kb),
     )
 
     def _build(raw: Any) -> QuizPlan | None:
@@ -278,9 +321,18 @@ def plan_quiz(client: OllamaClient, kb: KnowledgeBase, num_questions: int) -> Qu
             logger.warning("QuizPlan ValidationError: %s", exc.errors()[:2])
             return None
 
-    plan = _build(client.generate_json(prompt, system=SYSTEM_EXPERT_ES, temperature=0.2))
+    plan = _build(client.generate_json(
+        prompt, system=SYSTEM_EXPERT_ES, temperature=0.2,
+        schema=QUIZ_PLAN_JSON_SCHEMA,
+    ))
     if plan is None:
-        logger.warning("QuizPlan del LLM irrecuperable; usando fallback determinístico.")
+        logger.warning("QuizPlan del LLM irrecuperable; reintentando con temperatura 0.1…")
+        plan = _build(client.generate_json(
+            prompt, system=SYSTEM_EXPERT_ES, temperature=0.1,
+            schema=QUIZ_PLAN_JSON_SCHEMA,
+        ))
+    if plan is None:
+        logger.warning("QuizPlan tampoco válido; usando fallback determinístico.")
         plan = build_fallback_quiz_plan(kb, target_count=n)
 
     plan = sanitize_quiz_plan(plan, kb, target_count=n)
@@ -322,7 +374,10 @@ def generate_single_question(
     )
 
     try:
-        raw = client.generate_json(prompt, system=SYSTEM_EXPERT_ES, temperature=0.35)
+        raw = client.generate_json(
+            prompt, system=SYSTEM_EXPERT_ES, temperature=0.35,
+            schema=QUIZ_QUESTION_JSON_SCHEMA,
+        )
         if not isinstance(raw, dict):
             raise GenerationError(
                 f"El LLM no devolvió un objeto JSON (tipo {type(raw).__name__})."
