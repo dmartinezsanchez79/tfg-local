@@ -12,13 +12,13 @@
       "length_category": "medio"
     },
     {
-      "id": "cambio_climatico",
-      "filename": "CambioClimatico.pdf",
-      "title": "Cambio Climático",
-      "num_chars": 51998,
+      "id": "ciberseguridad",
+      "filename": "Ciberseguridad.pdf",
+      "title": "Ciberseguridad",
+      "num_chars": 42734,
       "has_tables": true,
       "has_images": true,
-      "domain": "medioambiente",
+      "domain": "informatica",
       "length_category": "alto"
     },
     {

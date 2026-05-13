@@ -6,6 +6,7 @@ Uso típico (desde la raíz del proyecto):
     python -m benchmark.runner --models qwen2.5:7b gemma2:9b
     python -m benchmark.runner --pdfs poo bbdd --only-pptx
     python -m benchmark.runner --dry-run            # lista las ejecuciones
+    python -m benchmark.runner --regen-reports      # CSV/plantilla desde metrics.json
 
 El runner reutiliza íntegramente el pipeline de `src/`:
     PDF → Markdown (pdf_processor)
@@ -114,6 +115,22 @@ def load_catalog(path: Path = CATALOG_PATH) -> list[PdfEntry]:
 
 def _sanitize(name: str) -> str:
     return name.replace(":", "_").replace("/", "_").replace(" ", "_")
+
+
+def collect_records_from_results(results_dir: Path = RESULTS_DIR) -> list[dict[str, Any]]:
+    """Carga cada ``<run>/metrics.json`` para regenerar reportes sin re-ejecutar Ollama."""
+    records: list[dict[str, Any]] = []
+    for metrics_path in sorted(results_dir.glob("*/metrics.json")):
+        try:
+            data = json.loads(metrics_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            logger.warning("No se pudo leer %s: %s", metrics_path, exc)
+            continue
+        if isinstance(data, dict) and data.get("pdf_id") and data.get("model"):
+            records.append(data)
+        else:
+            logger.warning("metrics.json ignorado (falta pdf_id/model): %s", metrics_path)
+    return records
 
 
 def _execution_dir(pdf: PdfEntry, model: str) -> Path:
@@ -310,6 +327,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Lista las ejecuciones previstas sin ejecutar nada.",
     )
     parser.add_argument(
+        "--regen-reports", action="store_true",
+        help=(
+            "No ejecuta el pipeline: lee benchmark/results/*/metrics.json y "
+            "vuelve a escribir benchmark/reports/*. Cierra Excel si tenías el CSV abierto."
+        ),
+    )
+    parser.add_argument(
         "--log-level", default="INFO",
         choices=("DEBUG", "INFO", "WARNING", "ERROR"),
     )
@@ -333,6 +357,18 @@ def main(argv: list[str] | None = None) -> int:
         format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
     )
     ensure_directories()
+
+    if args.regen_reports:
+        records = collect_records_from_results()
+        if not records:
+            print("No hay metrics.json en benchmark/results/.", file=sys.stderr)
+            return 1
+        print(f"\n=== Regenerando reportes ({len(records)} ejecuciones en disco) ===\n")
+        paths = reports_mod.write_all_reports(records)
+        for name, path in paths.items():
+            print(f"  {name:<18s} -> {path.relative_to(RESULTS_DIR.parent.parent)}")
+        print("\nListo. Cierra el CSV en otras apps si vuelve a fallar PermissionError.")
+        return 0
 
     catalog = load_catalog()
     pdfs = _select_pdfs(catalog, args.pdfs)
