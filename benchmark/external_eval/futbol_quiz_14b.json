@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "model_used": "qwen2.5:14b",
+    "pdf_source": "Futbol.pdf"
+  },
+  "semantic_correctness": {
+    "score": 4,
+    "comment": "La mayoría de las respuestas son correctas según el texto. Sin embargo, la justificación de la pregunta 4 es debatible, ya que Guardiola enfatiza la presión tras pérdida."
+  },
+  "relevance": {
+    "score": 5,
+    "comment": "Las preguntas se centran en los pilares tácticos y estadísticos del PDF, como los modelos de Klopp/Guardiola y las ligas europeas."
+  },
+  "clarity": {
+    "score": 5,
+    "comment": "Tanto los enunciados como las opciones están redactados de forma clara y profesional, facilitando la lectura."
+  },
+  "distractor_quality": {
+    "score": 4,
+    "comment": "Los distractores son plausibles ya que utilizan conceptos reales del texto, aunque en algunas preguntas la respuesta es muy evidente por descarte."
+  },
+  "difficulty": {
+    "score": 3,
+    "comment": "El nivel es adecuado pero tiende a ser sencillo, ya que varias preguntas orbitan sobre los mismos conceptos tácticos repetidamente."
+  },
+  "pedagogical_value": {
+    "score": 4,
+    "comment": "Es una buena herramienta para fijar conceptos sobre modelos tácticos históricos y modernos, así como diferencias entre ligas."
+  },
+  "hallucination_risk": {
+    "score": 5,
+    "comment": "No se detectan alucinaciones; toda la información sobre medias goleadoras y estilos de entrenadores está respaldada por el documento."
+  },
+  "overall": {
+    "score": 4,
+    "comment": "Un quiz sólido y fiel a la fuente, con buena estructura técnica y educativa."
+  },
+  "summary_comment": "El quiz evalúa con precisión los contenidos tácticos y estadísticos del PDF. Presenta una excelente redacción y coherencia, aunque repite en exceso el contraste entre el fútbol total, el catenaccio y los modelos de autor."
+}

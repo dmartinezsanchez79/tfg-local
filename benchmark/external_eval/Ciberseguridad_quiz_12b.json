@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "model_used": "gemma3:12b",
+    "pdf_source": "ciberseguridad.pdf"
+  },
+  "evaluation_quiz": {
+    "semantic_correctness": {
+      "score": 5,
+      "comment": "Las respuestas correctas se alinean perfectamente con las definiciones y fórmulas explícitas del PDF (fuentes 166, 168 y 172)."
+    },
+    "relevance": {
+      "score": 5,
+      "comment": "Cubre los pilares fundamentales: ciberseguridad, digitalización, computación cuántica y las fórmulas técnicas del informe."
+    },
+    "clarity": {
+      "score": 4,
+      "comment": "En general es claro, aunque algunas preguntas (7, 9, 10) tienen el enunciado cortado al final ('...considerando el', '...irru')."
+    },
+    "distractor_quality": {
+      "score": 4,
+      "comment": "Los distractores son plausibles al usar términos reales del PDF pero aplicados a conceptos erróneos, lo que obliga a discriminar bien."
+    },
+    "difficulty": {
+      "score": 4,
+      "comment": "Nivel universitario adecuado. No se limita a definiciones, sino que exige aplicar fórmulas y analizar escenarios hipotéticos."
+    },
+    "pedagogical_value": {
+      "score": 5,
+      "comment": "Excelente valor educativo al integrar los niveles de la taxonomía de Bloom, desde el recuerdo hasta la evaluación de casos."
+    },
+    "hallucination_risk": {
+      "score": 5,
+      "comment": "No se detectan alucinaciones; todas las entidades y conceptos (incluyendo los escenarios ficticios como 2045) constan en el PDF."
+    },
+    "overall": {
+      "score": 4,
+      "comment": "Es un quiz de alta calidad académica que refleja fielmente el contenido técnico y los escenarios del documento original."
+    },
+    "summary_comment": "El quiz es excelente y demuestra una comprensión profunda del PDF, utilizando correctamente las fórmulas técnicas y los niveles de Bloom. El único fallo técnico menor es el truncamiento de texto al final de algunos enunciados largos."
+  }
+}

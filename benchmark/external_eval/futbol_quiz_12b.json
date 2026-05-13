@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "model_used": "gemma3:12b",
+    "pdf_source": "Futbol.pdf"
+  },
+  "semantic_correctness": {
+    "score": 4,
+    "comment": "La mayoría de las respuestas son precisas según el texto. Sin embargo, la pregunta 10 infiere una relación de causalidad entre posesión y efectividad que el PDF no establece explícitamente."
+  },
+  "relevance": {
+    "score": 5,
+    "comment": "Las preguntas cubren los pilares del documento: evolución histórica, modelos de entrenamiento (Guardiola/Klopp), métricas (xG) e impacto de los datos."
+  },
+  "clarity": {
+    "score": 4,
+    "comment": "La redacción es profesional y clara, aunque las preguntas 7 y 13 tienen enunciados que parecen cortarse abruptamente al final."
+  },
+  "distractor_quality": {
+    "score": 5,
+    "comment": "Los distractores están muy bien diseñados; utilizan terminología real del PDF (como Catenaccio o WM) para crear opciones plausibles pero incorrectas."
+  },
+  "difficulty": {
+    "score": 4,
+    "comment": "El nivel es adecuado para entorno universitario, especialmente en las preguntas de nivel 'analizar' y 'evaluar' que requieren relacionar conceptos."
+  },
+  "pedagogical_value": {
+    "score": 5,
+    "comment": "Es una excelente herramienta de estudio ya que obliga a distinguir entre filosofías tácticas aparentemente similares pero con matices distintos."
+  },
+  "hallucination_risk": {
+    "score": 4,
+    "comment": "Bajo riesgo, aunque en la pregunta 7 introduce al 'Real Madrid' y 'Sergio Ramos' como elementos de contexto que no figuran en el PDF original."
+  },
+  "overall": {
+    "score": 4,
+    "comment": "Un quiz de alta calidad técnica y pedagógica que refleja fielmente el contenido académico del documento sobre fútbol moderno."
+  },
+  "summary_comment": "El quiz es excelente y demuestra una gran comprensión del texto, destacando el uso de los niveles de la taxonomía de Bloom. El único punto de mejora es evitar la introducción de ejemplos externos (como jugadores específicos) que no están en la fuente."
+}

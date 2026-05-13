@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "model_used": "qwen2.5:7b",
+    "pdf_source": "SistemasSaludPublica.pdf"
+  },
+  "semantic_correctness": {
+    "score": 4,
+    "comment": "La mayoría de respuestas coinciden con el PDF[cite: 17, 21]. No obstante, la justificación de la pregunta 15 es contradictoria respecto a la lógica de ocupación hospitalaria."
+  },
+  "relevance": {
+    "score": 5,
+    "comment": "Las preguntas cubren los pilares del documento: atención primaria, digitalización, epidemiología y el caso Mediterranea2030[cite: 13, 26, 110, 351]."
+  },
+  "clarity": {
+    "score": 4,
+    "comment": "Los enunciados son claros, aunque el uso de términos técnicos concatenados dificulta levemente la lectura fluida."
+  },
+  "distractor_quality": {
+    "score": 4,
+    "comment": "Los distractores son plausibles dentro del contexto sanitario, obligando a discriminar entre niveles de atención."
+  },
+  "difficulty": {
+    "score": 3,
+    "comment": "Dificultad equilibrada para nivel universitario; combina definiciones directas con análisis de relaciones entre entidades[cite: 25, 214]."
+  },
+  "pedagogical_value": {
+    "score": 4,
+    "comment": "Las justificaciones aportan valor educativo al explicar el porqué de la respuesta y reforzar la estructura organizacional."
+  },
+  "hallucination_risk": {
+    "score": 5,
+    "comment": "No se detectan alucinaciones; todas las entidades y dependencias (Aurora, Delta, Mirador) están en el texto[cite: 25, 97, 219]."
+  },
+  "overall": {
+    "score": 4,
+    "comment": "Es un quiz sólido que evalúa bien el contenido, con una estructura técnica coherente y buena distribución de niveles cognitivos."
+  },
+  "summary_comment": "El quiz refleja fielmente el contenido del PDF, especialmente la interconexión de entidades de la red sanitaria[cite: 213]. El único punto de mejora es la coherencia lógica en la justificación de la gestión de camas."
+}

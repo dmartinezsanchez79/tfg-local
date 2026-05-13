@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "model_used": "qwen2.5:14b",
+    "pdf_source": "ciberseguridad.pdf"
+  },
+  "semantic_correctness": {
+    "score": 5,
+    "comment": "Las respuestas marcadas como correctas coinciden con las definiciones y entidades presentadas en el documento (e.g., RedSanitariaDigitalAurora en la pág. 18)."
+  },
+  "relevance": {
+    "score": 4,
+    "comment": "Cubre temas centrales como IA, transformación digital y ciberseguridad, aunque se enfoca mucho en definiciones conceptuales y menos en los datos cuantitativos o fórmulas técnicas de las páginas 11 y 12."
+  },
+  "clarity": {
+    "score": 5,
+    "comment": "Tanto los enunciados como las opciones están redactados de forma profesional, clara y sin ambigüedades."
+  },
+  "distractor_quality": {
+    "score": 3,
+    "comment": "Muchos distractores son repetitivos entre preguntas (se reutilizan las mismas frases sobre desinformación o ética), lo que facilita descartarlos por eliminación."
+  },
+  "difficulty": {
+    "score": 2,
+    "comment": "La dificultad es baja para un nivel universitario; la mayoría de las preguntas son de nivel 'recordar' o 'comprender' definiciones literales, sin exigir análisis complejo."
+  },
+  "pedagogical_value": {
+    "score": 3,
+    "comment": "Es útil para un primer repaso de conceptos y entidades ficticias del texto, pero no refuerza el aprendizaje de los escenarios futuros o los modelos de riesgo."
+  },
+  "hallucination_risk": {
+    "score": 5,
+    "comment": "No hay alucinaciones; todas las entidades (CiberSigma, Aurora, etc.) y conceptos están presentes en el PDF proporcionado."
+  },
+  "overall": {
+    "score": 4,
+    "comment": "Es un quiz sólido y técnicamente correcto que refleja bien el contenido del PDF, aunque su nivel de exigencia académica es moderado."
+  },
+  "summary_comment": "El quiz evalúa correctamente los conceptos clave y las entidades del PDF sin inventar información. Sin embargo, abusa de la repetición de distractores y mantiene un nivel de dificultad bajo, centrado principalmente en la memorización de definiciones."
+}

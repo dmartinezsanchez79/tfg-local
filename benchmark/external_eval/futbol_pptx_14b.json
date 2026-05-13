@@ -1,0 +1,35 @@
+{
+  "metadata": {
+    "model_used": "qwen2.5:14b",
+    "pdf_source": "Futbol.pdf"
+  },
+  "thematic_coverage": {
+    "score": 4,
+    "comment": "Cubre los pilares de táctica, datos y tecnología. Se extraña una mención más directa al VAR o a los xG en las slides de desarrollo."
+  },
+  "narrative_coherence": {
+    "score": 5,
+    "comment": "La estructura es impecable, siguiendo un orden lógico desde la historia hasta las tendencias futuras y conclusiones."
+  },
+  "clarity": {
+    "score": 5,
+    "comment": "Redacción clara, profesional y directa. Los puntos clave se entienden sin ambigüedad."
+  },
+  "information_density": {
+    "score": 4,
+    "comment": "Equilibrio adecuado de bullets por slide, aunque en la slide de 'Herramientas Tecnológicas' la densidad es mayor que en el resto."
+  },
+  "no_repetition": {
+    "score": 4,
+    "comment": "Evita redundancias directas, aunque el concepto de 'ritmo/intensidad' se solapa ligeramente entre análisis e impacto psicológico."
+  },
+  "study_utility": {
+    "score": 3,
+    "comment": "Es un buen resumen, pero omite detalles técnicos del PDF (como los modelos de entrenamiento 'mixto' o 'reactivo') que serían útiles para estudio."
+  },
+  "overall": {
+    "score": 4,
+    "comment": "Una presentación sólida, bien organizada y fiel al tono del documento original."
+  },
+  "summary_comment": "La presentación es coherente y abarca los puntos clave del texto con gran claridad. Se han contrastado los datos (como las estadísticas de la Bundesliga y Premier) con el PDF adjunto, confirmando su precisión semántica."
+}

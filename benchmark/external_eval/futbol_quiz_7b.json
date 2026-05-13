@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "model_used": "qwen2.5:7b",
+    "pdf_source": "Futbol.pdf"
+  },
+  "semantic_correctness": {
+    "score": 2,
+    "comment": "Existen errores graves de contradicción con el texto. Por ejemplo, la pregunta 5 afirma que la posesión prolongada no se alinea con el Ajax, cuando el PDF asocia ese modelo con el dominio territorial[cite: 24]."
+  },
+  "relevance": {
+    "score": 4,
+    "comment": "Las preguntas abordan temas centrales como el xG [cite: 51], los modelos de Klopp y Guardiola [cite: 35, 37], y la evolución táctica histórica[cite: 16]."
+  },
+  "clarity": {
+    "score": 4,
+    "comment": "La redacción es clara y profesional, siguiendo bien los niveles de la taxonomía de Bloom indicados."
+  },
+  "distractor_quality": {
+    "score": 3,
+    "comment": "Los distractores son plausibles, aunque en las preguntas sobre posesión son meramente variaciones numéricas que no prueban comprensión profunda[cite: 87]."
+  },
+  "difficulty": {
+    "score": 3,
+    "comment": "Nivel adecuado para grado, combinando memoria de datos estadísticos con aplicación de conceptos tácticos."
+  },
+  "pedagogical_value": {
+    "score": 2,
+    "comment": "Bajo valor debido a que algunas respuestas correctas se basan en datos erróneos (como la pregunta 7, que confunde el dato de la Premier con el de LaLiga [cite: 87])."
+  },
+  "hallucination_risk": {
+    "score": 2,
+    "comment": "El modelo inventa que la posesión de la Premier League es del 64% (es 61% en el PDF [cite: 87]) y asigna justificaciones no respaldadas por el texto."
+  },
+  "overall": {
+    "score": 2,
+    "comment": "Quiz con buena apariencia formal pero con fallos de rigor técnico y semántico que lo hacen poco fiable para el estudio profesional."
+  },
+  "summary_comment": "El quiz presenta errores de precisión factual, intercambiando datos estadísticos entre ligas[cite: 87]. Además, las justificaciones pedagógicas contradicen en ocasiones la teoría táctica expuesta en el PDF sobre el fútbol total y el control del juego[cite: 24, 36]."
+}

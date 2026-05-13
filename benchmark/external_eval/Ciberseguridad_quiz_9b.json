@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "model_used": "gemma2:9b",
+    "pdf_source": "ciberseguridad.pdf"
+  },
+  "semantic_correctness": {
+    "score": 4,
+    "comment": "La mayoría de las respuestas son correctas según el PDF[cite: 57, 69, 166]. Sin embargo, la justificación de la pregunta 3 es subjetiva y no emana de una validación técnica explícita del texto."
+  },
+  "relevance": {
+    "score": 5,
+    "comment": "Las preguntas cubren los pilares del documento: definiciones técnicas, infraestructuras críticas, IA y los escenarios hipotéticos integrales[cite: 26, 79, 191]."
+  },
+  "clarity": {
+    "score": 4,
+    "comment": "La redacción es clara en general, aunque se filtran opciones en inglés que rompen la cohesión lingüística del test."
+  },
+  "distractor_quality": {
+    "score": 3,
+    "comment": "Algunos distractores son muy repetitivos o utilizan definiciones de otros conceptos del mismo texto, lo que los hace plausibles pero poco creativos."
+  },
+  "difficulty": {
+    "score": 3,
+    "comment": "El nivel es adecuado para un repaso general, pero las preguntas de nivel 'evaluar' tienen opciones demasiado evidentes que no exigen un análisis crítico profundo."
+  },
+  "pedagogical_value": {
+    "score": 4,
+    "comment": "Es un buen material de apoyo para fijar conceptos y entender las relaciones entre las entidades ficticias creadas en el informe [cite: 150-163]."
+  },
+  "hallucination_risk": {
+    "score": 4,
+    "comment": "El modelo se mantiene fiel a las entidades y escenarios del PDF[cite: 79, 276]. El único riesgo es la atribución de 'contraseñas débiles' sin base textual específica en la pregunta 3."
+  },
+  "overall": {
+    "score": 4,
+    "comment": "Un quiz sólido que refleja bien el contenido del PDF, ideal para una autoevaluación rápida de conceptos y escenarios."
+  },
+  "summary_comment": "El quiz es altamente fiel al contenido y a las entidades del PDF, cubriendo tanto la teoría como los escenarios prácticos. Su principal debilidad es la repetición de distractores en inglés y una dificultad algo plana en las preguntas de nivel superior."
+}

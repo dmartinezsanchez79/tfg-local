@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "model_used": "qwen2.5:14b",
+    "pdf_source": "SistemasSaludPublica.pdf"
+  },
+  "quiz_evaluation": {
+    "semantic_correctness": {
+      "score": 5,
+      "comment": "Las respuestas marcadas como correctas coinciden con las definiciones [cite: 14, 17, 27] y relaciones del PDF[cite: 37, 214]."
+    },
+    "relevance": {
+      "score": 5,
+      "comment": "El quiz cubre los pilares del documento: salud pública [cite: 13], gestión [cite: 81], digitalización [cite: 110], epidemiología [cite: 127] y el caso Mediterranea2030[cite: 351]."
+    },
+    "clarity": {
+      "score": 4,
+      "comment": "La redacción es clara y técnica; no obstante, algunos distractores se repiten textualmente entre diferentes preguntas."
+    },
+    "distractor_quality": {
+      "score": 3,
+      "comment": "Muchos distractores son definiciones reales de otros conceptos del PDF [cite: 31, 154], lo que ayuda a discriminar, pero la opción sobre 'información genética' [cite: 154] aparece de forma excesiva."
+    },
+    "difficulty": {
+      "score": 3,
+      "comment": "Nivel introductorio. Se centra mayoritariamente en niveles de Bloom bajos, con poca exigencia en los bloques técnicos o fórmulas descritas al final del documento [cite: 227-245]."
+    },
+    "pedagogical_value": {
+      "score": 4,
+      "comment": "Es una excelente herramienta para fijar el glosario técnico y las relaciones entre las entidades del caso de estudio [cite: 213-224]."
+    },
+    "hallucination_risk": {
+      "score": 5,
+      "comment": "No se detectan alucinaciones; todas las entidades (UCIOmega7 [cite: 37], MedSys2030 [cite: 31], etc.) y datos (87% cobertura [cite: 100]) están en la fuente."
+    },
+    "overall": {
+      "score": 4,
+      "comment": "Un quiz sólido y fiel al contenido, aunque ganaría valor con preguntas más desafiantes sobre los formalismos técnicos del capítulo 14[cite: 226]."
+    },
+    "summary_comment": "El quiz es académicamente riguroso y presenta una correspondencia exacta con los términos definidos en el PDF [cite: 1-224]. Aunque abusa de ciertos distractores repetitivos, evalúa con éxito el conocimiento del ecosistema RedHospitalaria Mediterranea2030[cite: 350]."
+  }
+}

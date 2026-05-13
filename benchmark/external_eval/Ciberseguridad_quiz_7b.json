@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "model_used": "qwen2.5:7b",
+    "pdf_source": "ciberseguridad.pdf"
+  },
+  "quiz_evaluation": {
+    "semantic_correctness": {
+      "score": 5,
+      "comment": "Las respuestas coinciden estrictamente con las fórmulas y datos del PDF, como la definición de riesgo o los porcentajes de ataques por región[cite: 166, 178]."
+    },
+    "relevance": {
+      "score": 5,
+      "comment": "Las preguntas abordan los pilares del documento: modelos de evaluación, escenarios futuros (2045/2050) y entidades clave de ciberdefensa[cite: 26, 134, 299]."
+    },
+    "clarity": {
+      "score": 4,
+      "comment": "La redacción es clara y utiliza la terminología técnica del informe, aunque algunas opciones en preguntas de 'evaluar' son algo extensas[cite: 3]."
+    },
+    "distractor_quality": {
+      "score": 4,
+      "comment": "Los distractores son plausibles al usar términos reales del PDF (como 'autenticación' o 'transparencia') pero en contextos o fórmulas incorrectas[cite: 64, 137]."
+    },
+    "difficulty": {
+      "score": 4,
+      "comment": "Es un nivel universitario adecuado; exige no solo recordar datos, sino identificar relaciones entre entidades ficticias y aplicar fórmulas específicas [cite: 150-163, 166]."
+    },
+    "pedagogical_value": {
+      "score": 5,
+      "comment": "Tiene un alto valor educativo al forzar al estudiante a diferenciar entre conceptos similares como ciberresiliencia, privacidad y dependencia tecnológica[cite: 168, 172, 176]."
+    },
+    "hallucination_risk": {
+      "score": 5,
+      "comment": "No hay alucinaciones; todas las entidades (como el ObservatorioAlgoritmicoGlobal) y escenarios existen en el texto fuente[cite: 49, 192]."
+    },
+    "overall": {
+      "score": 4,
+      "comment": "Un quiz excelente que aprovecha la densidad del PDF para crear preguntas técnicas precisas y bien justificadas[cite: 4]."
+    },
+    "summary_comment": "El quiz es técnica y semánticamente preciso, reflejando fielmente el contenido del PDF. Destaca especialmente en la evaluación de fórmulas y relaciones entre las entidades institucionales descritas en el informe académico."
+  }
+}

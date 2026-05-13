@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "model_used": "gemma3:12b",
+    "pdf_source": "ciberseguridad.pdf"
+  },
+  "evaluation_presentation": {
+    "thematic_coverage": {
+      "score": 4,
+      "comment": "Cubre los pilares (CIA), computación cuántica, resiliencia e infraestructuras. Omite la parte geopolítica y educativa detallada en el PDF."
+    },
+    "narrative_coherence": {
+      "score": 3,
+      "comment": "La estructura es lógica, pero la slide de introducción es un 'meta-comentario' del modelo y no contenido real; además, carece de slide de conclusión."
+    },
+    "clarity": {
+      "score": 5,
+      "comment": "Los bullets están muy bien redactados, son directos y utilizan terminología técnica precisa de forma divulgativa."
+    },
+    "information_density": {
+      "score": 4,
+      "comment": "Equilibrio adecuado. No satura al lector, aunque la slide 10 es algo densa al resumir fórmulas ya explicadas antes."
+    },
+    "no_repetition": {
+      "score": 2,
+      "comment": "Baja puntuación debido a la slide 10, que repite casi íntegramente las definiciones de riesgo, resiliencia y privacidad de las slides 5, 7 y 8."
+    },
+    "study_utility": {
+      "score": 3,
+      "comment": "Útil para conceptos teóricos y fórmulas, pero pierde valor al no incluir los datos cuantitativos y comparativos (tablas) presentes en el PDF."
+    },
+    "overall": {
+      "score": 3,
+      "comment": "Una presentación aceptable pero mejorable. El contenido es correcto, pero falla en la redundancia de slides finales y en el error de la slide introductoria."
+    },
+    "summary_comment": "La presentación es técnicamente sólida y fiel al glosario del PDF, especialmente en las definiciones de ciberresiliencia y computación cuántica. Sin embargo, la repetición de conceptos en la slide de 'Fórmulas' y una introducción mal generada por el modelo reducen su calidad profesional."
+  }
+}

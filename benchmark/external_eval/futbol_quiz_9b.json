@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "model_used": "gemma2:9b",
+    "pdf_source": "Futbol.pdf"
+  },
+  "semantic_correctness": {
+    "score": 2,
+    "comment": "Las preguntas finales contienen opciones incoherentes con el texto (jerga de programación) y la pregunta 3 tiene una justificación que no encaja con su opción correcta."
+  },
+  "relevance": {
+    "score": 4,
+    "comment": "Se centra en temas clave como el xG [cite: 51] y el fútbol total[cite: 23], aunque hay una repetición excesiva sobre el concepto de xG."
+  },
+  "clarity": {
+    "score": 2,
+    "comment": "La redacción de las opciones en las preguntas 5, 6 y 7 es confusa y utiliza terminología ajena al dominio del fútbol."
+  },
+  "distractor_quality": {
+    "score": 2,
+    "comment": "Los distractores de las últimas preguntas son absurdos para este contexto ('estado interno', 'dominio'), anulando su función pedagógica."
+  },
+  "difficulty": {
+    "score": 3,
+    "comment": "El nivel inicial es adecuado, pero el quiz se vuelve confuso por errores técnicos en la generación de opciones."
+  },
+  "pedagogical_value": {
+    "score": 2,
+    "comment": "Aunque cubre conceptos importantes, los errores semánticos y las opciones mal generadas pueden inducir a error al estudiante."
+  },
+  "hallucination_risk": {
+    "score": 1,
+    "comment": "Muy alto. Las preguntas 5 a 7 introducen conceptos de ingeniería de software que no aparecen en ninguna parte del PDF ."
+  },
+  "overall": {
+    "score": 2,
+    "comment": "Quiz deficiente debido a una degradación severa en la calidad de las preguntas finales, mezclando fútbol con conceptos técnicos ajenos."
+  },
+  "summary_comment": "El quiz comienza bien analizando el xG, pero sufre una alucinación grave a partir de la mitad. Las opciones finales son totalmente ajenas al texto y carecen de sentido en el contexto deportivo del documento[cite: 114]."
+}

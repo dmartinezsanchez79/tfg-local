@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "model_used": "qwen2.5:14b",
+    "pdf_source": "EnergiaRenovable.pdf"
+  },
+  "quiz_evaluation": {
+    "semantic_correctness": {
+      "score": 5,
+      "comment": "Las respuestas marcadas coinciden plenamente con las definiciones, fórmulas y casos del PDF [cite: 15, 22, 25, 138, 140, 152, 154, 156-159]."
+    },
+    "relevance": {
+      "score": 5,
+      "comment": "Las preguntas cubren los pilares del texto: conceptos base, funcionamiento técnico, mantenimiento, impacto y el caso de estudio Aurora."
+    },
+    "clarity": {
+      "score": 5,
+      "comment": "Tanto los enunciados como las opciones están redactados de forma profesional y sin ambigüedades."
+    },
+    "distractor_quality": {
+      "score": 4,
+      "comment": "Los distractores usan otros términos reales del PDF para confundir legítimamente al estudiante, aunque en preguntas de definición son algo evidentes."
+    },
+    "difficulty": {
+      "score": 4,
+      "comment": "Nivel universitario adecuado; incluye desde memoria básica hasta aplicación de fórmulas y análisis de escenarios [cite: 151-154, 237-251]."
+    },
+    "pedagogical_value": {
+      "score": 5,
+      "comment": "Excelente para el estudio, ya que obliga a distinguir entre conceptos similares y a aplicar cálculos específicos del material."
+    },
+    "hallucination_risk": {
+      "score": 5,
+      "comment": "No hay alucinaciones; todas las entidades (Sigma12, AuroraEuropa2026, Atlantis) y datos existen en la fuente."
+    },
+    "overall": {
+      "score": 5,
+      "comment": "Un quiz de alta calidad que refleja fielmente el contenido técnico y narrativo del documento proporcionado."
+    },
+    "summary_comment": "El quiz es excelente y demuestra una alta fidelidad semántica con el PDF, integrando correctamente fórmulas y entidades específicas del proyecto Aurora. La progresión de niveles de Bloom permite una evaluación integral del conocimiento."
+  }
+}

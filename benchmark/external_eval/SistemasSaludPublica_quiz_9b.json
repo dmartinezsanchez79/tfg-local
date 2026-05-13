@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "model_used": "gemma2:9b",
+    "pdf_source": "SistemasSaludPublica.pdf"
+  },
+  "semantic_correctness": {
+    "score": 4,
+    "comment": "La mayoría de las respuestas coinciden con el PDF, especialmente la definición de salud pública[cite: 14]. Sin embargo, la pregunta 5 es subjetiva y la respuesta marcada como correcta no es la única válida según el texto."
+  },
+  "relevance": {
+    "score": 5,
+    "comment": "Las preguntas se centran en los pilares del documento: la definición de salud pública y el caso de estudio RedHospitalaria Mediterranea2030[cite: 7, 351]."
+  },
+  "clarity": {
+    "score": 4,
+    "comment": "La redacción es clara, aunque la pregunta 7 repite la temática de la 1 y tiene distractores redactados como metacomentarios en lugar de opciones reales."
+  },
+  "distractor_quality": {
+    "score": 2,
+    "comment": "En las preguntas 5 y 6, todas las opciones son positivas y plausibles según el PDF, lo que invalida la elección de una única 'correcta'[cite: 351, 360]. En la 7, los distractores carecen de valor pedagógico."
+  },
+  "difficulty": {
+    "score": 3,
+    "comment": "Nivel introductorio adecuado. No explota los datos cuantitativos ni los formalismos técnicos [cite: 227, 253] que elevarían la dificultad a nivel universitario."
+  },
+  "pedagogical_value": {
+    "score": 3,
+    "comment": "Útil para fijar conceptos básicos y la estructura del caso de estudio, pero falla en evaluar el pensamiento crítico debido a la ambigüedad en niveles de Bloom superiores."
+  },
+  "hallucination_risk": {
+    "score": 5,
+    "comment": "No se detectan alucinaciones; toda la terminología (RedHospitalaria, MedSys2030, etc.) está presente en el material original[cite: 31, 351]."
+  },
+  "overall": {
+    "score": 3,
+    "comment": "Un quiz aceptable para una revisión rápida, pero con deficiencias estructurales en el diseño de opciones múltiples y repetición de contenidos."
+  },
+  "summary_comment": "El quiz es fiel al contenido del PDF y define correctamente los conceptos clave. Sin embargo, presenta problemas en la calidad de los distractores y solapamiento entre preguntas, lo que limita su utilidad como herramienta de evaluación universitaria rigurosa."
+}

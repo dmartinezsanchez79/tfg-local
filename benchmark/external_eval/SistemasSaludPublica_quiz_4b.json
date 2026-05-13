@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "model_used": "gemma3:4b",
+    "pdf_source": "SistemasSaludPublica.pdf"
+  },
+  "semantic_correctness": {
+    "score": 4,
+    "comment": "Las definiciones conceptuales (salud pública, atención primaria, bioética) son precisas según el PDF[cite: 14, 21, 46]. Sin embargo, en la pregunta 7 y 10 otorga validez a datos de ocupación (87%) que el modelo ha generalizado por error[cite: 253]."
+  },
+  "relevance": {
+    "score": 5,
+    "comment": "Las preguntas abordan los pilares del documento: niveles de atención, digitalización, vigilancia y gestión hospitalaria[cite: 10, 12]."
+  },
+  "clarity": {
+    "score": 2,
+    "comment": "Deficiente en las preguntas de nivel 'aplicar' (7, 8, 10), donde los enunciados y opciones aparecen cortados abruptamente dificultando la lectura."
+  },
+  "distractor_quality": {
+    "score": 4,
+    "comment": "Los distractores están bien construidos; utilizan términos reales del PDF como telemedicina o bioética [cite: 39, 45] pero aplicados incorrectamente al contexto de la pregunta."
+  },
+  "difficulty": {
+    "score": 3,
+    "comment": "Dificultad equilibrada para un nivel introductorio universitario. Combina memoria con aplicaciones lógicas sobre gestión de recursos."
+  },
+  "pedagogical_value": {
+    "score": 3,
+    "comment": "Es útil para fijar conceptos básicos, pero los errores de formato y la fijación con el dato del '87%' [cite: 253, 259] restan calidad didáctica."
+  },
+  "hallucination_risk": {
+    "score": 4,
+    "comment": "Bajo riesgo de alucinación de conceptos. El modelo se mantiene fiel a las entidades mencionadas como RedHospitalariaMediterranea2030 o LaboratorioBiomedicoDelta[cite: 7, 25]."
+  },
+  "overall": {
+    "score": 3,
+    "comment": "Un quiz funcional y semánticamente sólido en su base, pero penalizado por problemas técnicos de formato y una sobrevaloración de datos estadísticos específicos."
+  },
+  "summary_comment": "El quiz es académicamente aceptable y muestra una buena extracción de definiciones del PDF. No obstante, los truncamientos en las preguntas de aplicación clínica y la repetición del dato de ocupación del 87% [cite: 253] como una verdad universal del sistema restan profesionalidad al resultado final."
+}

@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "model_used": "gemma2:9b",
+    "pdf_source": "EnergiaRenovable.pdf"
+  },
+  "semantic_correctness": {
+    "score": 2,
+    "comment": "Errores graves en claves de respuesta. La Q9 marca 172.9 MWh cuando el cálculo correcto según el PDF da ~1.500 GWh. [cite: 154, 165]"
+  },
+  "relevance": {
+    "score": 5,
+    "comment": "Las preguntas cubren todos los puntos clave: definiciones, el caso Parque Aurora, mantenimiento e impacto ambiental. [cite: 15, 237, 46, 48]"
+  },
+  "clarity": {
+    "score": 4,
+    "comment": "Redacción clara, aunque la pregunta 12 es conceptualmente confusa al mezclar mantenimiento con fórmulas de emisiones. [cite: 155, 160]"
+  },
+  "distractor_quality": {
+    "score": 3,
+    "comment": "En definiciones son plausibles, pero en cálculos la validez del distractor se anula al ser errónea la respuesta marcada."
+  },
+  "difficulty": {
+    "score": 3,
+    "comment": "Adecuada para nivel universitario, combinando niveles de recordar hasta evaluar."
+  },
+  "pedagogical_value": {
+    "score": 2,
+    "comment": "El valor educativo se ve comprometido por errores en datos técnicos y fórmulas que pueden inducir a error. [cite: 165]"
+  },
+  "hallucination_risk": {
+    "score": 2,
+    "comment": "El modelo alucina relaciones en la Q12 y distorsiona causas en los escenarios (Q10) respecto al texto original. [cite: 73, 155]"
+  },
+  "overall": {
+    "score": 2,
+    "comment": "Falla en precisión técnica y matemática, lo cual es crítico en un contexto de ingeniería."
+  },
+  "summary_comment": "El quiz presenta una estructura pedagógica sólida basada en Bloom, pero falla significativamente en la veracidad técnica. Contiene errores de cálculo en la producción energética y atribuciones incorrectas que contradicen directamente las tablas y fórmulas del PDF."
+}

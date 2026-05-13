@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "model_used": "gemma3:4b",
+    "pdf_source": "EnergiaRenovable.pdf"
+  },
+  "evaluation_quiz": {
+    "semantic_correctness": {
+      "score": 2,
+      "comment": "Existen errores graves: la pregunta 11 alucina que 320.000 metros equivalen a 320.000 km, contradiciendo los datos técnicos[cite: 62]."
+    },
+    "relevance": {
+      "score": 5,
+      "comment": "Las preguntas abordan los pilares fundamentales: definiciones [cite: 13], fórmulas [cite: 151], mantenimiento [cite: 45] y el caso Parque Aurora[cite: 237]."
+    },
+    "clarity": {
+      "score": 3,
+      "comment": "Varios enunciados están incompletos o cortados abruptamente, dificultando la comprensión de la tarea solicitada."
+    },
+    "distractor_quality": {
+      "score": 4,
+      "comment": "Los distractores utilizan terminología real del PDF (como subestaciones o CO2) para crear opciones plausibles e instructivas[cite: 33, 36]."
+    },
+    "difficulty": {
+      "score": 4,
+      "comment": "El nivel es adecuado para el ámbito universitario, combinando el recuerdo de conceptos con la aplicación de fórmulas físicas."
+    },
+    "pedagogical_value": {
+      "score": 3,
+      "comment": "Aunque cubre bien el material, los errores en datos cuantitativos y los textos cortados limitan su fiabilidad como material de estudio."
+    },
+    "hallucination_risk": {
+      "score": 2,
+      "comment": "El modelo inventa conversiones de unidades imposibles en la pregunta 11 y asume resultados de cálculo no deducibles del texto."
+    },
+    "overall": {
+      "score": 2,
+      "comment": "Es un quiz con buena intención estructural pero con fallos técnicos críticos en la integridad de los datos."
+    },
+    "summary_comment": "El quiz presenta una cobertura temática excelente sobre el desarrollo eólico[cite: 11, 237], pero falla severamente en la corrección de datos numéricos y en la completitud de los enunciados. Es preocupante la confusión de unidades de medida y el truncamiento de preguntas clave."
+  }
+}

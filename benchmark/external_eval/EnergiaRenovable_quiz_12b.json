@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "model_used": "gemma3:12b",
+    "pdf_source": "EnergiaRenovable.pdf"
+  },
+  "quiz_evaluation": {
+    "semantic_correctness": {
+      "score": 5,
+      "comment": "Las respuestas correctas se alinean perfectamente con los datos y definiciones del PDF, incluyendo relaciones entre entidades y fórmulas técnicas[cite: 15, 19, 28, 152]."
+    },
+    "relevance": {
+      "score": 5,
+      "comment": "Cubre los temas centrales: definiciones básicas, componentes técnicos, cálculos, impacto ambiental y casos de estudio[cite: 11, 51, 151]."
+    },
+    "clarity": {
+      "score": 5,
+      "comment": "Tanto los enunciados como las opciones están redactados con precisión académica y sin ambigüedades."
+    },
+    "distractor_quality": {
+      "score": 4,
+      "comment": "Los distractores son plausibles y están bien construidos, utilizando terminología del mismo dominio para evitar que la respuesta sea obvia[cite: 16, 32, 43]."
+    },
+    "difficulty": {
+      "score": 4,
+      "comment": "Nivel adecuado para grado universitario; combina preguntas de recuerdo directo con aplicaciones de fórmulas y análisis de escenarios[cite: 154, 163, 243]."
+    },
+    "pedagogical_value": {
+      "score": 5,
+      "comment": "Excelente para el estudio; las justificaciones refuerzan el aprendizaje y las preguntas escalan según la taxonomía de Bloom[cite: 261]."
+    },
+    "hallucination_risk": {
+      "score": 5,
+      "comment": "No se detectan alucinaciones; todas las entidades y datos (41%, 320.000t CO2) están presentes en el documento[cite: 69, 82]."
+    },
+    "overall": {
+      "score": 4,
+      "comment": "Un quiz de alta calidad técnica y pedagógica que evalúa eficazmente la comprensión integral del material proporcionado[cite: 260]."
+    },
+    "summary_comment": "El quiz es académicamente sólido y fiel al PDF adjunto, destacando especialmente en la integración de cálculos técnicos y relaciones entre las entidades del escenario 'Parque Aurora'[cite: 8, 262]. Es una herramienta de evaluación excelente para el nivel de cuarto de carrera de informática."
+  }
+}

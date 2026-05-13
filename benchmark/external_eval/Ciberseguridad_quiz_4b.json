@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "model_used": "gemma3:4b",
+    "pdf_source": "ciberseguridad.pdf"
+  },
+  "quiz_evaluation": {
+    "semantic_correctness": {
+      "score": 5,
+      "comment": "Las respuestas coinciden estrictamente con las definiciones y fórmulas presentadas en el PDF, especialmente la fórmula de riesgo [cite: 166] y los pilares de seguridad[cite: 56, 59, 61]."
+    },
+    "relevance": {
+      "score": 4,
+      "comment": "El quiz se centra en los conceptos fundamentales y en los escenarios hipotéticos clave (CyberShield [cite: 26], BlackGrid [cite: 79]) que estructuran el documento."
+    },
+    "clarity": {
+      "score": 5,
+      "comment": "Tanto los enunciados como las opciones de respuesta están redactados de forma clara, profesional y sin ambigüedades."
+    },
+    "distractor_quality": {
+      "score": 3,
+      "comment": "Los distractores son técnicamente correctos en sus propias definiciones, pero resultan algo repetitivos al usarse los mismos conceptos cruzados en varias preguntas."
+    },
+    "difficulty": {
+      "score": 2,
+      "comment": "Para un nivel universitario, el quiz es sencillo; la mayoría de las preguntas son de nivel 'recordar' y las de 'aplicar' se resuelven por eliminación directa."
+    },
+    "pedagogical_value": {
+      "score": 4,
+      "comment": "Es excelente para asegurar la comprensión de la terminología básica y la narrativa de los casos de estudio antes de pasar a temas más complejos."
+    },
+    "hallucination_risk": {
+      "score": 5,
+      "comment": "No se detectan alucinaciones; todos los términos, escenarios y entidades mencionadas (como CyberShieldGlobal2045 [cite: 26, 192]) existen en el PDF."
+    },
+    "overall": {
+      "score": 4,
+      "comment": "Un quiz sólido y fiel a la fuente, ideal como control de lectura inicial, aunque podría beneficiarse de preguntas con mayor carga analítica."
+    },
+    "summary_comment": "El quiz refleja con gran precisión el contenido del PDF 'Ciberseguridad', validando correctamente términos técnicos y casos de estudio. Aunque el nivel de dificultad es bajo para un entorno universitario, su corrección semántica y claridad son excelentes."
+  }
+}

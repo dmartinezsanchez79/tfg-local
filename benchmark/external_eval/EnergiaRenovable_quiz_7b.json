@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "model_used": "qwen2.5:7b",
+    "pdf_source": "EnergiaRenovable.pdf"
+  },
+  "evaluation_quiz": {
+    "semantic_correctness": {
+      "score": 2,
+      "comment": "Existen errores graves: la pregunta 3 confunde potencia con energía y la pregunta 6 marca como correcta una cifra (30 GWh) que contradice frontalmente los datos del PDF (1500 GWh)[cite: 165, 168]."
+    },
+    "relevance": {
+      "score": 5,
+      "comment": "Las preguntas cubren los pilares del documento: definiciones, fórmulas técnicas, mantenimiento predictivo e impacto ambiental[cite: 15, 45, 151, 160]."
+    },
+    "clarity": {
+      "score": 4,
+      "comment": "La redacción es clara y profesional, aunque la pregunta 6 tiene una estructura de opciones algo confusa al incluir letras dentro del enunciado."
+    },
+    "distractor_quality": {
+      "score": 3,
+      "comment": "Los distractores en las preguntas teóricas son plausibles, pero en las preguntas de cálculo son numéricamente arbitrarios o carecen de una base lógica sólida según el texto."
+    },
+    "difficulty": {
+      "score": 3,
+      "comment": "Nivel adecuado para grado, combinando recuerdo directo con aplicación de fórmulas y análisis de casos específicos del texto."
+    },
+    "pedagogical_value": {
+      "score": 3,
+      "comment": "Es útil para repasar conceptos, pero los errores en los datos cuantitativos pueden inducir a error al estudiante si intenta validar los resultados con el PDF."
+    },
+    "hallucination_risk": {
+      "score": 2,
+      "comment": "El modelo alucina datos en la pregunta 6 y 10; el PDF no menciona que la relación con la subestación 'incremente los costos de mantenimiento'[cite: 23, 35]."
+    },
+    "overall": {
+      "score": 3,
+      "comment": "Un quiz bien estructurado formalmente pero con fallos técnicos en la verificación de datos numéricos y fórmulas aplicadas."
+    },
+    "summary_comment": "El quiz es didáctico y cubre bien la terminología, pero falla en la precisión de los datos cuantitativos. La discrepancia entre la producción anual real del parque (1500 GWh) y la opción dada como correcta (30 GWh) es un error crítico de interpretación de la fuente."
+  }
+}

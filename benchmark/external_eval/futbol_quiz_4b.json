@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "model_used": "gemma3:4b",
+    "pdf_source": "Futbol.pdf"
+  },
+  "semantic_correctness": {
+    "score": 4,
+    "comment": "Las respuestas coinciden con los datos del PDF. No obstante, la pregunta 8 es cuestionable, ya que sugiere que un equipo que usa Catenaccio debería adelantar líneas, lo cual contradice la naturaleza reactiva descrita."
+  },
+  "relevance": {
+    "score": 3,
+    "comment": "Se centra demasiado en las métricas de la tabla final, dejando fuera temas cruciales como el VAR, los jóvenes talentos o la sostenibilidad del calendario."
+  },
+  "clarity": {
+    "score": 5,
+    "comment": "Tanto los enunciados como las opciones de respuesta están redactados de forma impecable y son fáciles de entender."
+  },
+  "distractor_quality": {
+    "score": 4,
+    "comment": "Los distractores son plausibles, utilizando otros datos reales del texto para aumentar la discriminación."
+  },
+  "difficulty": {
+    "score": 2,
+    "comment": "La dificultad es baja. Muchas preguntas son puramente memorísticas sobre datos de una tabla, lo cual no requiere un análisis profundo de nivel universitario."
+  },
+  "pedagogical_value": {
+    "score": 3,
+    "comment": "Es útil para verificar la lectura de datos específicos, pero no ayuda a asimilar la evolución histórica o los debates tecnológicos planteados."
+  },
+  "hallucination_risk": {
+    "score": 5,
+    "comment": "No se detectan alucinaciones; todos los datos numéricos y conceptos tácticos mencionados tienen respaldo directo en el contenido del PDF."
+  },
+  "overall": {
+    "score": 3,
+    "comment": "Valoración global del quiz."
+  },
+  "summary_comment": "El quiz es técnicamente preciso y claro, apoyándose correctamente en las métricas del PDF. Sin embargo, ignora gran parte del contenido teórico y crítico del documento, resultando en una evaluación demasiado enfocada en la memorización de estadísticas."
+}

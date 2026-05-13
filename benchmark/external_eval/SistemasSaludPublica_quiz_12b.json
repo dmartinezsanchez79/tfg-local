@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "model_used": "gemma3:12b",
+    "pdf_source": "SistemasSaludPublica.pdf"
+  },
+  "semantic_correctness": {
+    "score": 5,
+    "comment": "Las respuestas marcadas coinciden plenamente con las definiciones y datos específicos del PDF[cite: 14, 100, 253]."
+  },
+  "relevance": {
+    "score": 5,
+    "comment": "El quiz abarca todos los bloques clave: conceptos, digitalización, casos de estudio y gestión[cite: 10, 110, 351]."
+  },
+  "clarity": {
+    "score": 4,
+    "comment": "Redacción profesional. Se observa un ligero truncamiento de texto en los enunciados de las preguntas 9 y 14."
+  },
+  "distractor_quality": {
+    "score": 4,
+    "comment": "Los distractores obligan a discriminar correctamente entre niveles asistenciales y tipos de sistemas[cite: 21, 23]."
+  },
+  "difficulty": {
+    "score": 4,
+    "comment": "Equilibrada; combina recuerdo directo con niveles de análisis que requieren interrelacionar secciones del texto[cite: 350]."
+  },
+  "pedagogical_value": {
+    "score": 5,
+    "comment": "Las justificaciones son excelentes para el aprendizaje al explicar la invalidez de las opciones incorrectas."
+  },
+  "hallucination_risk": {
+    "score": 5,
+    "comment": "No se detectan alucinaciones; todas las entidades mencionadas existen en el texto fuente[cite: 25, 37, 50]."
+  },
+  "overall": {
+    "score": 4,
+    "comment": "Quiz de alta calidad que refleja fielmente el contenido. Penalizado levemente por el formato de texto en algunos enunciados."
+  },
+  "summary_comment": "Herramienta de evaluación excelente que utiliza escenarios hipotéticos para evaluar el pensamiento crítico[cite: 7, 370]. Alineación coherente con la taxonomía de Bloom y gran valor didáctico."
+}
