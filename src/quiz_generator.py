@@ -404,10 +404,10 @@ def _build_deterministic_question(
 ) -> QuizQuestion:
     """Construye una pregunta MCQ mínima sin LLM a partir del átomo central.
 
-    Red de seguridad para modelos <7B que a veces devuelven JSON basura
-    sistemáticamente: prefiero 1 pregunta trivial pero válida a un quiz vacío.
-    Los distractores genéricos quedarán marcados por el crítico si el LLM
-    principal llega a funcionar después.
+    Fallback determinista para modelos pequeños que devuelven JSON
+    inválido: se prefiere una pregunta básica pero válida antes que un
+    quiz vacío. Los distractores genéricos serán marcados por el crítico
+    si el LLM principal vuelve a estar disponible.
     """
     if isinstance(atom, Definition):
         stem = f"¿Cuál define mejor «{atom.term}»?"
@@ -468,7 +468,7 @@ def _build_deterministic_question(
             justification=justification,
         )
     except ValidationError:
-        # Plantilla ultra-segura de último recurso.
+        # Plantilla genérica si los datos del átomo siguen sin encajar.
         return QuizQuestion(
             id=planned.id,
             bloom_level=planned.bloom_level,
@@ -581,11 +581,11 @@ def generate_quiz(
         if q is not None:
             questions.append(q)
 
-    # Fallback de emergencia: si NINGUNA pregunta sobrevivió, construimos
-    # deterministamente a partir de la KB. Garantiza que el quiz nunca
-    # esté vacío con modelos muy pequeños que devuelven JSON inválido.
+    # Si NINGUNA pregunta sobrevivió, construimos un quiz mínimo de forma
+    # determinista a partir de la KB. Evita devolver un quiz vacío cuando
+    # un modelo muy pequeño produce JSON inválido de forma sistemática.
     if not questions:
-        logger.warning("Ninguna pregunta en la 1ª pasada; fallback determinista de emergencia.")
+        logger.warning("Ninguna pregunta en la 1ª pasada; usando fallback determinista.")
         emergency = sanitize_quiz_plan(
             build_fallback_quiz_plan(kb, target_count=min_q), kb, target_count=min_q,
         )

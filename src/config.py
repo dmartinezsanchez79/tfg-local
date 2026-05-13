@@ -1,6 +1,7 @@
 """Configuración global del sistema."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Final
 
@@ -9,7 +10,11 @@ ROOT_DIR: Final[Path] = Path(__file__).resolve().parent.parent
 TEMPLATE_PATH: Final[Path] = ROOT_DIR / "plantilla_universidad.pptx"
 
 # --- Ollama ---
-OLLAMA_BASE_URL: Final[str] = "http://localhost:11434"
+# Configurable por variable de entorno para que, dentro de Docker, se
+# pueda apuntar al servicio del host vía `host.docker.internal`.
+OLLAMA_BASE_URL: Final[str] = os.environ.get(
+    "OLLAMA_BASE_URL", "http://localhost:11434"
+)
 AVAILABLE_MODELS: Final[tuple[str, ...]] = (
     "qwen2.5:14b",
     "gemma3:12b",

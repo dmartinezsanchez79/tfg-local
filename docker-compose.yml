@@ -1,7 +1,15 @@
 ﻿services:
   app:
     build: .
+    image: tfg-local:latest
+    container_name: tfg-local
+    restart: unless-stopped
     ports:
       - "8501:8501"
     environment:
+      # Ollama se ejecuta en el host (no en el contenedor). En Windows y
+      # macOS `host.docker.internal` resuelve al host por defecto; en
+      # Linux se mapea explícitamente con `extra_hosts`.
       OLLAMA_BASE_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

@@ -965,11 +965,11 @@ def render_pptx(plan: PresentationPlan, output_path: Path | None = None) -> byte
     index_titles = [s.title for s in slides_ok]
     preloaded = list(prs.slides)
 
+    cover_subtitle = "Material académico"
     if preloaded:
-        _overwrite_template_cover(preloaded[0], plan.title,
-                                  subtitle="Presentación generada automáticamente")
+        _overwrite_template_cover(preloaded[0], plan.title, subtitle=cover_subtitle)
     else:
-        _add_title_slide(prs, plan.title, subtitle="Presentación generada automáticamente")
+        _add_title_slide(prs, plan.title, subtitle=cover_subtitle)
 
     index_written = False
     if len(preloaded) >= 2:

@@ -2,8 +2,8 @@
 
 `SlidePlan` y `QuizPlan` son contratos intermedios entre la KB y la
 generación final. El LLM los produce; este módulo los valida, repara
-(coerce + fuzzy match) y, como red de seguridad para modelos pequeños
-(<7B), sabe construir un plan mínimo desde la KB sin LLM.
+(coerce + fuzzy match) y, como fallback para modelos pequeños (<7B),
+sabe construir un plan mínimo desde la KB sin LLM.
 """
 from __future__ import annotations
 

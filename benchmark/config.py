@@ -18,10 +18,6 @@ CATALOG_PATH: Final[Path] = DATASET_DIR / "catalog.json"
 RESULTS_DIR: Final[Path] = BENCH_DIR / "results"
 REPORTS_DIR: Final[Path] = BENCH_DIR / "reports"
 
-# Carpeta del proyecto con los PDFs originales: se usa como segundo lugar
-# de búsqueda si el PDF no está en `dataset/pdfs/`.
-PROJECT_PDFS_DIR: Final[Path] = BENCH_DIR.parent / "PDF"
-
 # --- Modelos por defecto ---------------------------------------------------
 # Conjunto representativo (qwen + gemma, 14B → 4B).
 DEFAULT_MODELS: Final[tuple[str, ...]] = (

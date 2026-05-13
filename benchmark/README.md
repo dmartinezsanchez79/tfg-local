@@ -29,8 +29,9 @@ benchmark/
 ├── judge_prompts.py       ← prompts de evaluación externa con IA
 ├── reports.py             ← agregación en CSV
 ├── dataset/
-│   ├── pdfs/              ← PDFs del benchmark (opcional; fallback: ../PDF)
+│   ├── pdfs/              ← PDFs del benchmark referenciados por catalog.json
 │   └── catalog.json       ← metadatos del dataset, editable a mano
+├── external_eval/         ← respuestas JSON de la IA externa (manual)
 ├── results/               ← una carpeta por ejecución (pdf × modelo)
 └── reports/               ← CSVs agregados y rúbrica
 ```
@@ -166,11 +167,9 @@ Criterio recomendado para `length_category` (por `num_chars`):
 - `medio`: 20.001 a 50.000
 - `alto`: más de 50.000
 
-Los PDFs pueden estar en `benchmark/dataset/pdfs/` **o** en la carpeta
-`PDF/` de la raíz del proyecto: el runner los busca en ese orden.
-
-Para añadir un PDF nuevo: editar `catalog.json` y colocar el fichero en
-una de las dos carpetas. No hace falta tocar código.
+Los PDFs deben estar en `benchmark/dataset/pdfs/`. Para añadir uno
+nuevo: editar `catalog.json` y colocar el fichero en esa carpeta. No
+hace falta tocar código.
 
 ## 8. Robustez
 

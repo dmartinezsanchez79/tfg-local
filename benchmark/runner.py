@@ -42,7 +42,6 @@ from .config import (
     CATALOG_PATH,
     DATASET_PDFS_DIR,
     DEFAULT_MODELS,
-    PROJECT_PDFS_DIR,
     QUIZ_MAX_QUESTIONS,
     QUIZ_MIN_QUESTIONS,
     REFINE_QUIZ,
@@ -76,8 +75,8 @@ class PdfEntry:
 def load_catalog(path: Path = CATALOG_PATH) -> list[PdfEntry]:
     """Lee `catalog.json` y resuelve rutas reales de los PDFs.
 
-    Busca primero en ``benchmark/dataset/pdfs/`` y, si no está, cae al
-    ``PDF/`` del proyecto. Omite entradas cuyo PDF no exista en ninguno.
+    Los PDFs se buscan en ``benchmark/dataset/pdfs/``. Si una entrada del
+    catálogo no encuentra fichero, se omite con un warning.
     """
     if not path.exists():
         raise FileNotFoundError(f"No existe el catálogo: {path}")
@@ -88,11 +87,10 @@ def load_catalog(path: Path = CATALOG_PATH) -> list[PdfEntry]:
         filename = str(raw.get("filename") or "").strip()
         if not pdf_id or not filename:
             continue
-        candidates = [DATASET_PDFS_DIR / filename, PROJECT_PDFS_DIR / filename]
-        resolved = next((p for p in candidates if p.exists()), None)
-        if resolved is None:
-            logger.warning("PDF '%s' no encontrado en %s ni %s; omitiendo.",
-                           filename, DATASET_PDFS_DIR, PROJECT_PDFS_DIR)
+        resolved = DATASET_PDFS_DIR / filename
+        if not resolved.exists():
+            logger.warning("PDF '%s' no encontrado en %s; omitiendo.",
+                           filename, DATASET_PDFS_DIR)
             continue
         entries.append(PdfEntry(
             id=pdf_id,
@@ -104,7 +102,7 @@ def load_catalog(path: Path = CATALOG_PATH) -> list[PdfEntry]:
     if not entries:
         raise RuntimeError(
             "Catálogo vacío: ningún PDF del catálogo se ha encontrado en "
-            f"{DATASET_PDFS_DIR} ni en {PROJECT_PDFS_DIR}."
+            f"{DATASET_PDFS_DIR}."
         )
     return entries
 

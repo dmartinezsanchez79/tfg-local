@@ -454,19 +454,27 @@ def refine_slides(
     plan_by_title = {s.title: s for s in slide_plan.slides}
     total = len(built_slides)
     new_slides: list["BuiltSlide"] = []
+    prior_bullets: list[str] = []
     for i, bs in enumerate(built_slides, start=1):
         if i not in critical:
             new_slides.append(bs)
+            prior_bullets.extend(bs.bullets)
             continue
         planned = plan_by_title.get(bs.title)
         if planned is None:
             new_slides.append(bs)
+            prior_bullets.extend(bs.bullets)
             continue
         try:
-            bullets = render_slide_bullets(client, kb, planned, slide_plan, index=i, total=total)
+            bullets = render_slide_bullets(
+                client, kb, planned, slide_plan,
+                index=i, total=total, prior_bullets=prior_bullets,
+            )
             new_slides.append(BuiltSlide(title=bs.title, bullets=bullets, kind=bs.kind))
+            prior_bullets.extend(bullets)
         except GenerationError as exc:
             logger.warning("Regeneración slide '%s' falló: %s", bs.title, exc)
             new_slides.append(bs)
+            prior_bullets.extend(bs.bullets)
 
     return new_slides, review

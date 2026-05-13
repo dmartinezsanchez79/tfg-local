@@ -1,7 +1,42 @@
-﻿.venv/
+﻿# Entorno y caché de Python
+.venv/
+.venv*/
 __pycache__/
+**/__pycache__/
 *.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Git e infraestructura
 .git/
+.gitignore
+.gitattributes
+.github/
+
+# Sistema operativo / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Docker (no recursivo: el propio contenedor no se necesita)
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Benchmark: dataset, resultados y reportes son datos del usuario, no
+# parte del runtime de la app Streamlit.
+benchmark/dataset/pdfs/*.pdf
 benchmark/results/
 benchmark/reports/
+benchmark/external_eval/
+
+# Streamlit local (secrets, etc.)
+.streamlit/secrets.toml
+
+# Artefactos varios
+*.log
 _extracted_markdown_test.md

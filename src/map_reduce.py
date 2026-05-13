@@ -154,19 +154,6 @@ def _map_phase(
     return partials
 
 
-def _reduce_phase(
-    client: OllamaClient,
-    partials: list[str],
-    progress_cb: ProgressCallback | None,
-) -> str:
-    """Consolidación legacy a Markdown libre. Se conserva como fallback."""
-    if progress_cb:
-        progress_cb("reduce", 1, 1, "Consolidando resumen global…")
-    joined = _join_partials(partials)
-    prompt = REDUCE_CONSOLIDATION_PROMPT.format(partials=joined)
-    return client.generate(prompt, system=SYSTEM_EXPERT_ES).strip()
-
-
 def _join_partials(partials: list[str]) -> str:
     return "\n\n---\n\n".join(
         f"[Resumen parcial {i + 1}]\n{p}" for i, p in enumerate(partials)
@@ -264,8 +251,8 @@ def _fc_kind_of(content: str) -> str:
 def build_fallback_kb(markdown: str, hints: LiteralHints) -> KnowledgeBase:
     """Construye una `KnowledgeBase` mínima sin llamar al LLM.
 
-    Se usa cuando el modelo devuelve JSON inválido o vacío. Usa los hints
-    literales extraídos determinísticamente (v1.3+) y estructura del
+    Se usa cuando el modelo devuelve JSON inválido o vacío. Combina los
+    hints literales extraídos determinísticamente y la estructura del
     Markdown original (H1/H2) para recuperar contenido verificable.
     """
     main_topic = _infer_main_topic(markdown, hints)
@@ -539,13 +526,11 @@ def _enrich_kb_with_literal_hints(
     """Fusiona en la KB las definiciones y bloques de código literales que
     el LLM se haya saltado.
 
-    No sobrescribe nada de lo que el LLM produjo: solo añade lo que falta.
-    Las definiciones se reconocen por término normalizado (sin acentos,
-    minúsculas) para evitar duplicados con distinto formato.
-
-    Es una red de seguridad para modelos pequeños: aunque el LLM devuelva
-    una KB pobre, siempre tendremos al menos las N definiciones literales
-    que extrajimos determinísticamente del PDF.
+    No sobrescribe lo producido por el LLM: solo añade lo que falta. Las
+    definiciones se reconocen por término normalizado (sin acentos,
+    minúsculas) para evitar duplicados con distinto formato. Garantiza un
+    suelo mínimo de átomos verificables aunque el LLM devuelva una KB
+    pobre.
     """
     if hints.is_empty:
         return kb
@@ -723,19 +708,3 @@ def build_knowledge_base(
     return _reduce_to_kb(
         client, partials, literal_hints, progress_cb, source_markdown=markdown
     )
-
-
-def consolidate_document(
-    client: OllamaClient,
-    markdown: str,
-    progress_cb: ProgressCallback | None = None,
-) -> str:
-    """Shim de compatibilidad: devuelve la KB renderizada como Markdown.
-
-    El resto del pipeline (quiz, presentación) aún espera texto plano como
-    `summary`. Esta función construye la KB estructurada y la serializa
-    a Markdown legible para mantener compatibilidad hasta que esos
-    consumidores migren a `KnowledgeBase`.
-    """
-    kb = build_knowledge_base(client, markdown, progress_cb=progress_cb)
-    return kb.to_markdown()
